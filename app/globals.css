@@ -37,7 +37,8 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; overflow-x: clip; }
+body { overflow-x: clip; }
 body {
   margin: 0;
   background: var(--background);
@@ -199,8 +200,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .project-card:hover { transform: translateY(-6px); border-color: rgba(181,156,255,.31); box-shadow: 0 22px 60px rgba(0,0,0,.22); }
 .project-preview-wrap { position: relative; overflow: hidden; padding: 12px 12px 0; }
 .project-preview { position: relative; height: 185px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; }
-.project-number { position: absolute; top: 21px; left: 21px; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 7px; color: #f1edf9; background: rgba(8,8,12,.55); font-family: 'Courier New', monospace; font-size: 10px; backdrop-filter: blur(8px); }
-.project-placeholder-label { position: absolute; right: 20px; bottom: 8px; z-index: 2; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; color: #eee9f8; background: rgba(8,9,14,.76); font-family: 'Courier New', monospace; font-size: 7px; letter-spacing: .06em; text-transform: uppercase; backdrop-filter: blur(8px); pointer-events: none; }
+.project-number { position: absolute; z-index: 20; top: 21px; left: 21px; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 7px; color: #f1edf9; background: rgba(8,8,12,.55); font-family: 'Courier New', monospace; font-size: 10px; backdrop-filter: blur(8px); }
+.project-placeholder-label { position: absolute; right: 20px; bottom: 8px; z-index: 20; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; color: #eee9f8; background: rgba(8,9,14,.76); font-family: 'Courier New', monospace; font-size: 7px; letter-spacing: .06em; text-transform: uppercase; backdrop-filter: blur(8px); pointer-events: none; }
 .project-card-content { display: flex; flex: 1; flex-direction: column; padding: 19px 19px 18px; }
 .project-category-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; color: #aaa6b6; font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 .coming-soon { display: inline-flex; align-items: center; gap: 6px; color: #a9e5d0; font-size: 8px; letter-spacing: .03em; }

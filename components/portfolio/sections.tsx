@@ -196,7 +196,7 @@ function ProjectLink({ url, label, icon }: { url?: string; label: string; icon: 
   if (!isConfiguredUrl(url)) {
     return <span className="project-link project-link-unavailable"><Icon aria-hidden="true" />{label}<small>URL needed</small></span>
   }
-  return <a className="project-link" href={url} target="_blank" rel="noreferrer"> <Icon aria-hidden="true" />{label}<ArrowUpRight aria-hidden="true" /></a>
+  return <a className={icon === "demo" ? "project-link project-link-primary" : "project-link"} href={url} target="_blank" rel="noreferrer"><Icon aria-hidden="true" />{label}<ArrowUpRight aria-hidden="true" /></a>
 }
 
 function ProjectCard({ project, index }: { project: PortfolioProject; index: number }) {
@@ -213,7 +213,7 @@ function ProjectCard({ project, index }: { project: PortfolioProject; index: num
             {project.features.map((feature) => <span key={feature}><Check aria-hidden="true" />{feature}</span>)}
           </div>
           <div className="project-actions">
-            {project.status ? <span className="coming-soon-note"><Sparkles aria-hidden="true" /> In progress</span> : <ProjectLink url={project.liveDemoUrl} label="Live demo" icon="demo" />}
+            {project.status ? <span className="coming-soon-note"><Sparkles aria-hidden="true" /> In progress</span> : <ProjectLink url={project.liveDemoUrl} label="Live Demo" icon="demo" />}
             {project.status ? null : <ProjectLink url={project.githubUrl} label="GitHub" icon="github" />}
           </div>
         </div>
@@ -231,7 +231,7 @@ export function ProjectsSection() {
         <Reveal delay={0.08}><p className="section-intro">Some of the projects I&apos;ve worked on, combining functionality, creativity and problem-solving.</p></Reveal>
       </div>
       <div className="projects-grid">{projects.map((project, index) => <ProjectCard key={project.number} project={project} index={index} />)}</div>
-      <p className="project-link-note"><ExternalLink aria-hidden="true" /> Project demo and repository URLs are ready to add in <code>lib/projects.ts</code>.</p>
+      <p className="project-link-note"><ExternalLink aria-hidden="true" /> GitHub repository URLs can be updated in <code>lib/projects.ts</code>.</p>
     </section>
   )
 }

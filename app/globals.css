@@ -216,6 +216,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .project-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 18px; }
 .project-link, .coming-soon-note { display: inline-flex; min-height: 33px; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; color: #d0ccd9; font-size: 9px; font-weight: 600; transition: border-color .2s ease, color .2s ease, background .2s ease; }
 a.project-link:hover { border-color: rgba(181,156,255,.46); color: #e9e1ff; background: rgba(181,156,255,.08); }
+.project-link-primary { min-height: 40px; padding: 0 13px; border-color: transparent; color: #110d1c; background: linear-gradient(115deg, #d3c2ff, #a88bfa); font-size: 10px; font-weight: 700; box-shadow: 0 5px 24px rgba(150,119,236,.12); }
+a.project-link-primary:hover { border-color: transparent; color: #110d1c; background: linear-gradient(115deg, #e0d6ff, #b89fff); box-shadow: 0 10px 30px rgba(150,119,236,.25); }
+a.project-link-primary:focus-visible { outline: 2px solid #d3c2ff; outline-offset: 3px; }
 .project-link svg, .coming-soon-note svg { width: 12px; height: 12px; }
 .project-link > svg:last-child:not(:first-child) { width: 10px; height: 10px; margin-left: 2px; }
 .project-link-unavailable { border-color: rgba(255,255,255,.06); color: #8c8997; background: rgba(255,255,255,.015); }

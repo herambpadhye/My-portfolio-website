@@ -11,7 +11,7 @@ export type PortfolioProject = {
   preview: "travel" | "restaurant" | "analytics"
 }
 
-// Replace these sample values with real deployment and repository URLs when available.
+// Live demos are deployed; replace the editable GitHub placeholders when repository URLs are available.
 export const projects: PortfolioProject[] = [
   {
     number: "01",
@@ -38,7 +38,7 @@ export const projects: PortfolioProject[] = [
       "Flights, buses, trains & cruises with booking redirects",
       "Host dashboard",
     ],
-    liveDemoUrl: "https://YOUR-TRAVEL-WEBSITE-URL",
+    liveDemoUrl: "https://end-to-end-travel-website.vercel.app/listings",
     githubUrl: "https://github.com/YOUR-USERNAME/YOUR-TRAVEL-REPOSITORY",
     preview: "travel",
   },
@@ -55,7 +55,7 @@ export const projects: PortfolioProject[] = [
       "Responsive browsing experience",
       "Clear, friendly navigation",
     ],
-    liveDemoUrl: "https://YOUR-NOM-NOM-STATION-URL",
+    liveDemoUrl: "https://main.restomania.pages.dev/",
     githubUrl: "https://github.com/YOUR-USERNAME/YOUR-NOM-NOM-REPOSITORY",
     preview: "restaurant",
   },
@@ -74,7 +74,7 @@ export const projects: PortfolioProject[] = [
       "Multi-sheet Excel exports",
       "KPI color scaling for CTR, CPC, CPM, purchases & ROAS",
     ],
-    status: "Coming soon",
+    status: "Coming Soon",
     preview: "analytics",
   },
 ]

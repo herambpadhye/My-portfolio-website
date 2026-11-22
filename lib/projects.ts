@@ -64,7 +64,7 @@ export const projects: PortfolioProject[] = [
     name: "Meta Ads Analytics & Reporting Tool",
     category: "Reporting & automation",
     description:
-      "An analytics and reporting tool developed during an internship to automate campaign data processing and generate structured Excel reports with actionable insights.",
+      "I made this analytics and reporting tool during my internship at Arriba Media Technologies Pvt Ltd to automate campaign data processing and generate structured Excel reports with actionable insights.",
     technologies: ["JavaScript", "HTML", "CSS", "ExcelJS"],
     features: [
       "CSV & TSV data parsing",

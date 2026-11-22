@@ -74,7 +74,8 @@ export const projects: PortfolioProject[] = [
       "Multi-sheet Excel exports",
       "KPI color scaling for CTR, CPC, CPM, purchases & ROAS",
     ],
-    status: "Coming Soon",
+    liveDemoUrl: "/meta-ads-analytics.html",
+    githubUrl: "https://github.com/YOUR-USERNAME/YOUR-META-ADS-REPOSITORY",
     preview: "analytics",
   },
 ]

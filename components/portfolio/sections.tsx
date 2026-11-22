@@ -188,7 +188,9 @@ function ProjectPreview({ type }: { type: PortfolioProject["preview"] }) {
 }
 
 function isConfiguredUrl(url?: string) {
-  return Boolean(url && /^https:\/\//.test(url) && !url.includes("YOUR-") && !url.includes("YOUR_"))
+  const isHttpsUrl = Boolean(url && /^https:\/\//.test(url) && !url.includes("YOUR-") && !url.includes("YOUR_"))
+  const isLocalPath = Boolean(url && url.startsWith("/") && !url.startsWith("//"))
+  return isHttpsUrl || isLocalPath
 }
 
 function ProjectLink({ url, label, icon }: { url?: string; label: string; icon: "demo" | "github" }) {

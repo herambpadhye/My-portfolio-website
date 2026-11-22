@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Audit Formatter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+  :root{
+    --ink:#12161c;
+    --paper:#f6f5f1;
+    --panel:#ffffff;
+    --line:#e2e0d8;
+    --accent:#1c5d4a;
+    --accent-soft:#e7efe9;
+    --amber:#b5651d;
+    --muted:#6b6a63;
+    --green:#63BE7B;
+    --red:#F8696B;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:36px;}
+  header.top .brand{font-size:22px;font-weight:700;letter-spacing:-0.01em;}
+  header.top .brand span{color:var(--accent);}
+  header.top .tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .crumbs{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:18px;text-transform:uppercase;letter-spacing:.06em;}
+  .crumbs button{background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;}
+  .screen{display:none;}
+  .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .lede{max-width:640px;color:var(--muted);font-size:15px;line-height:1.55;margin-bottom:32px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+  .card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);padding:22px 20px;cursor:pointer;transition:.15s;text-align:left;}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 20px rgba(18,22,28,.06);}
+  .card .num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.08em;}
+  .card h3{font-size:17px;margin:10px 0 6px;}
+  .card p{margin:0;font-size:13px;color:var(--muted);line-height:1.5;}
+
+  .panel{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+  .panel h3{font-size:15px;margin-bottom:12px;}
+  textarea{width:100%;min-height:130px;font-family:'JetBrains Mono',monospace;font-size:12.5px;border:1.5px solid var(--line);border-radius:8px;padding:12px;resize:vertical;background:#fbfbf9;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;}
+  label.chk{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  button.btn{font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:8px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;transition:.15s;}
+  button.btn:hover{background:#000;}
+  button.btn.ghost{background:transparent;color:var(--ink);}
+  button.btn.ghost:hover{background:var(--accent-soft);}
+  button.btn.accent{background:var(--accent);border-color:var(--accent);}
+  button.btn.accent:hover{background:#154a3b;}
+  button.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .tablewrap{overflow-x:auto;border:1.5px solid var(--line);border-radius:8px;margin-top:16px;}
+  table.data{border-collapse:collapse;width:100%;font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  table.data th{background:var(--ink);color:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:10px 12px;text-align:left;white-space:nowrap;position:sticky;top:0;}
+  table.data td{padding:8px 12px;border-bottom:1px solid #ececea;white-space:nowrap;}
+  table.data td[contenteditable]{cursor:text;}
+  table.data td[contenteditable]:focus{outline:2px solid var(--accent);outline-offset:-2px;}
+  table.data tr:last-child td{border-bottom:none;}
+
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .foot-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
+  .note{font-size:12px;color:var(--muted);}
+
+  .insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+  .stat{background:var(--accent-soft);border-radius:8px;padding:16px;}
+  .stat .k{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
+  .stat .v{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-top:4px;}
+  .highlight-row{display:flex;justify-content:space-between;padding:10px 4px;border-bottom:1px solid #ececea;font-size:13.5px;}
+  .highlight-row .tag2{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:2px 7px;border-radius:20px;}
+  .tag2.good{background:#e6f5ea;color:#1c5d38;}
+  .tag2.bad{background:#fbe9e7;color:#a03526;}
+
+  /* --- AI Insights (additive only — does not alter any rule above) --- */
+  .ai-panel{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;}
+  .ai-panel h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:14px;}
+  .ai-line{font-size:14.5px;line-height:1.65;color:var(--ink);margin:0 0 14px;}
+  .ai-line:last-child{margin-bottom:0;}
+  .ai-line strong{color:var(--accent);}
+  .ai-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--accent-soft);border-radius:20px;padding:3px 10px;margin-bottom:12px;}
+  .deep-panel{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;}
+  .deep-panel h3{font-size:15px;margin:0 0 16px;font-family:'Space Grotesk',sans-serif;}
+  .deep-section{padding:14px 0;border-top:1px solid #ececea;}
+  .deep-section:first-of-type{border-top:none;padding-top:0;}
+  .deep-section-title{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:7px;}
+  .deep-line{font-size:14px;line-height:1.65;margin:0;color:var(--ink);}
+  .deep-table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:8px;}
+  table.deep-table{border-collapse:collapse;width:100%;font-size:12px;}
+  table.deep-table th{background:var(--ink);color:#fff;padding:8px 10px;text-align:left;white-space:nowrap;}
+  table.deep-table td{padding:8px 10px;border-bottom:1px solid #ececea;white-space:nowrap;}
+  table.deep-table tr:last-child td{border-bottom:none;}
+  .deep-good{color:#1c5d38;font-weight:600;}
+  .deep-bad{color:#a03526;font-weight:600;}
+</style>
+
+<style id="theme-toggle-css">
+  /* --- Light / Dark mode (additive only) --- */
+  #theme-toggle-btn{position:fixed;top:5px;right:14px;z-index:1000;padding:3px 12px;font-size:12.5px;background:var(--panel);}
+  #theme-toggle-btn:hover{background:var(--accent-soft);}
+  html[data-theme="dark"]{
+    --ink:#e8e6df;
+    --paper:#12161c;
+    --panel:#1b2027;
+    --line:#2e353e;
+    --accent:#4fb596;
+    --accent-soft:#1f2e29;
+    --amber:#e0903f;
+    --muted:#9da0a6;
+    color-scheme:dark;
+  }
+  html[data-theme="dark"] textarea{background:#151a20;color:var(--ink);}
+  html[data-theme="dark"] button.btn{background:#2a313a;border-color:#3b434d;color:#fff;}
+  html[data-theme="dark"] button.btn:hover{background:#343c47;}
+  html[data-theme="dark"] button.btn.ghost{background:transparent;color:var(--ink);border-color:#3b434d;}
+  html[data-theme="dark"] button.btn.ghost:hover{background:var(--accent-soft);}
+  html[data-theme="dark"] button.btn.accent{background:#1c5d4a;border-color:#1c5d4a;color:#fff;}
+  html[data-theme="dark"] button.btn.accent:hover{background:#247a62;}
+  html[data-theme="dark"] #app-back-btn{background:var(--panel);color:var(--ink);}
+  html[data-theme="dark"] #theme-toggle-btn{background:var(--panel);color:var(--ink);}
+  html[data-theme="dark"] table.data th,
+  html[data-theme="dark"] table.deep-table th{background:#2a313a;color:#fff;}
+  html[data-theme="dark"] table.data td,
+  html[data-theme="dark"] table.deep-table td,
+  html[data-theme="dark"] .highlight-row,
+  html[data-theme="dark"] .deep-section{border-color:var(--line);}
+  html[data-theme="dark"] table.data td[style*="rgb("]{color:#12161c;}
+  html[data-theme="dark"] .card:hover{box-shadow:0 8px 20px rgba(0,0,0,.35);}
+  html[data-theme="dark"] .tag2.good{background:#1b3326;color:#7fd39b;}
+  html[data-theme="dark"] .tag2.bad{background:#3a1f1c;color:#f2897b;}
+  html[data-theme="dark"] .deep-good{color:#7fd39b;}
+  html[data-theme="dark"] .deep-bad{color:#f2897b;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Audit <span>Formatter</span></div>
+    <div class="tag">Meta Ads Toolkit</div>
+  </header>
+
+  <!-- SCREEN 0: DASHBOARD -->
+  <div class="screen active" id="screen-dashboard">
+    <p class="lede">Paste a table straight from your Google Sheet and get it back conditionally formatted, or as a quick performance read. No setup, nothing saved anywhere but this tab.</p>
+    <div class="grid">
+      <div class="card" onclick="goCategoryPicker()">
+        <div class="num">01</div>
+        <h3>Conditional formatting</h3>
+        <p>Pick a breakdown — month, objective, audience, region, campaign, platform or demographic — and get the matching column set, color-scaled and ready to export.</p>
+      </div>
+      <div class="card" onclick="goInsights()">
+        <div class="num">02</div>
+        <h3>Insights</h3>
+        <p>Paste any of the same tables and get a quick read: totals, efficiency, and which rows are pulling their weight vs. dragging.</p>
+      </div>
+      <!-- ADDITIVE: entry point for the new raw-data-in, formatted-workbook-out workflow. Does not alter cards 01/02. -->
+      <div class="card" onclick="goRawImport()">
+        <div class="num">03</div>
+        <h3>Raw data → workbook</h3>
+        <p>Paste a raw Meta Ads Manager export and get every breakdown — month, objective, audience, region, campaign, platform, demographic — generated and exported as one workbook.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: CATEGORY PICKER -->
+  <div class="screen" id="screen-category">
+    <div class="crumbs"><button onclick="goDashboard()">Dashboard</button> / Conditional formatting</div>
+    <p class="lede">Choose the breakdown you're formatting. Each one loads its own column set.</p>
+    <div class="grid" id="category-grid"></div>
+  </div>
+
+  <!-- SCREEN 2: WORKSPACE (conditional formatting) -->
+  <div class="screen" id="screen-workspace">
+    <div class="crumbs"><button onclick="goDashboard()">Dashboard</button> / <button onclick="goCategoryPicker()">Conditional formatting</button> / <span id="ws-title-crumb"></span></div>
+    <div class="panel">
+      <h3 id="ws-title"></h3>
+      <p class="note" id="ws-columns" style="margin-bottom:10px;"></p>
+      <textarea id="ws-paste" placeholder="Paste your table here — copy the cells straight from Google Sheets or Excel (tab-separated), header row included."></textarea>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="ws-header" checked> First pasted row is the header</label>
+        <button class="btn accent" onclick="loadPastedData()">Format table</button>
+        <button class="btn ghost" onclick="clearWorkspace()">Clear</button>
+      </div>
+    </div>
+    <div class="panel" id="ws-table-panel" style="display:none;">
+      <div class="tablewrap"><div id="ws-table-container"></div></div>
+      <div class="foot-actions">
+        <span class="note">Edit any cell directly — colors recalculate on blur.</span>
+        <button class="btn" onclick="downloadExcel()">Download formatted Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: INSIGHTS -->
+  <div class="screen" id="screen-insights">
+    <div class="crumbs"><button onclick="goDashboard()">Dashboard</button> / Insights</div>
+    <div class="panel">
+      <h3>Paste your table</h3>
+      <p class="note" style="margin-bottom:10px;">Works with any of the breakdown tables — month, campaign, audience, platform, etc. Recognized columns are picked up automatically.</p>
+      <textarea id="ins-paste" placeholder="Paste your table here, header row included."></textarea>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="ins-header" checked> First pasted row is the header</label>
+        <button class="btn accent" onclick="runInsights()">Generate insights</button>
+        <button class="btn ghost" onclick="clearInsights()">Clear</button>
+      </div>
+    </div>
+    <div id="ins-output"></div>
+  </div>
+
+  <!-- SCREEN 4 (ADDITIVE): RAW DATA → WORKBOOK
+       New workflow only. Reuses existing .panel/.card/.btn/.row/.chk/.tablewrap/.data
+       CSS classes as-is — no CSS was added or changed for this screen. -->
+  <div class="screen" id="screen-rawimport">
+    <div class="crumbs"><button onclick="goDashboard()">Dashboard</button> / Raw data → workbook</div>
+    <p class="lede">Paste (or upload) one raw export from Meta Ads Manager — day-level or ad-level, whatever columns it has. Extra columns are ignored automatically; only the columns this tool recognizes are used. It will group everything into the seven standard breakdowns and hand you back one workbook.</p>
+
+    <div class="panel">
+      <h3>Raw data</h3>
+      <p class="note" style="margin-bottom:10px;">Paste straight from Meta Ads Manager / Sheets / Excel (tab-separated), or upload a .csv export. Header row required.</p>
+      <textarea id="raw-paste" placeholder="Paste your raw Meta Ads Manager export here — header row included."></textarea>
+      <div class="row">
+        <label class="chk"><input type="file" id="raw-file" accept=".csv,.tsv,.txt" onchange="handleRawFileUpload(event)" style="max-width:220px;"></label>
+        <button class="btn accent" onclick="processRawData()">Process raw data</button>
+        <button class="btn ghost" onclick="clearRawImport()">Clear</button>
+      </div>
+      <p class="note" id="raw-status" style="margin-top:10px;"></p>
+    </div>
+
+    <div id="raw-sheets-output"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- column + rule config ---------------- */
+const GREEN=[99,190,123], RED=[248,105,107], WHITE=[255,255,255];
+// direction: 'lowGreen' => low value green, high value red (cost-type metrics)
+// 'lowRed'   => low value red, high value green (performance-type metrics)
+const METRIC_RULES = {
+  "Amount spent (INR)":"lowGreen",
+  "Reach":"lowRed",
+  "Impressions":"lowRed",
+  "CPM (cost per 1,000 impressions)":"lowGreen",
+  "Link clicks":"lowRed",
+  "CTR (link click-through rate)":"lowRed",
+  "CPC (cost per link click)":"lowGreen",
+  "Adds to cart":"lowRed",
+  "Cost per add to cart":"lowGreen",
+  "Checkouts initiated":"lowRed",
+  "Checkouts initiated(optional)":"lowRed",
+  "Cost per checkout initiated":"lowGreen",
+  "Cost per checkout initiated(optional)":"lowGreen",
+  "Purchases":"lowRed",
+  "Cost per purchase":"lowGreen",
+  "Purchases conversion value":"lowRed",
+  "Purchases  conversion value":"lowRed",
+  "Purchase ROAS (return on ad spend)":"lowRed",
+  "AOV":"lowRed",
+  "Conv. Rate":"lowRed"
+};
+const TEXT_COLS = ["Month","Objective","Ad set name","Region","Campaign name","Platform","Placement","Gender","Age"];
+
+const CATEGORIES = {
+  month:{
+    label:"Month wise", desc:"One row per month — the default view for spend and funnel trends over time.",
+    cols:["Month","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated(optional)","Cost per checkout initiated(optional)","Purchases","Cost per purchase","Purchases  conversion value","Purchase ROAS (return on ad spend)","AOV","Conv. Rate"]
+  },
+  objective:{
+    label:"Objective wise", desc:"Compare campaign objectives against each other, month by month.",
+    cols:["Month","Objective","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value","Purchase ROAS (return on ad spend)","AOV"]
+  },
+  audience:{
+    label:"Audience wise", desc:"Ad-set level breakdown to see which audiences are performing.",
+    cols:["Ad set name","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value","Purchase ROAS (return on ad spend)","AOV"]
+  },
+  region:{
+    label:"Region wise", desc:"Top-of-funnel efficiency by region.",
+    cols:["Region","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)"]
+  },
+  campaign:{
+    label:"Campaign wise", desc:"Campaign-level view through to conversion value.",
+    cols:["Campaign name","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value"]
+  },
+  platform:{
+    label:"Platform wise", desc:"Platform and placement performance side by side.",
+    cols:["Platform","Placement","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value","Purchase ROAS (return on ad spend)","AOV"]
+  },
+  demographic:{
+    label:"Demographic wise", desc:"Gender and age-band breakdown.",
+    cols:["Gender","Age","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value","Purchase ROAS (return on ad spend)","AOV"]
+  }
+};
+
+let currentCategory=null;
+let currentRows=[]; // array of arrays (strings), matches currentCategory.cols order
+
+/* ---------------- navigation ---------------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goDashboard(){ showScreen('screen-dashboard'); }
+function goCategoryPicker(){
+  const grid=document.getElementById('category-grid');
+  grid.innerHTML='';
+  Object.entries(CATEGORIES).forEach(([key,cat],i)=>{
+    const div=document.createElement('div');
+    div.className='card';
+    div.onclick=()=>openWorkspace(key);
+    div.innerHTML=`<div class="num">${String(i+1).padStart(2,'0')}</div><h3>${cat.label}</h3><p>${cat.desc}</p>`;
+    grid.appendChild(div);
+  });
+  showScreen('screen-category');
+}
+function goInsights(){ showScreen('screen-insights'); }
+
+function openWorkspace(key){
+  currentCategory=key;
+  const cat=CATEGORIES[key];
+  document.getElementById('ws-title').textContent=cat.label;
+  document.getElementById('ws-title-crumb').textContent=cat.label;
+  document.getElementById('ws-columns').textContent="Columns: "+cat.cols.join(" · ");
+  document.getElementById('ws-paste').value='';
+  document.getElementById('ws-table-panel').style.display='none';
+  currentRows=[];
+  showScreen('screen-workspace');
+}
+function clearWorkspace(){
+  document.getElementById('ws-paste').value='';
+  document.getElementById('ws-table-panel').style.display='none';
+  currentRows=[];
+}
+
+/* ---------------- paste parsing ---------------- */
+function parsePaste(raw){
+  return raw.replace(/\r/g,'').split('\n').filter(l=>l.length>0).map(l=>l.split('\t'));
+}
+function parseNum(text){
+  if(text==null) return null;
+  let s=String(text).trim();
+  if(s==='') return null;
+  s=s.replace(/[₹$,]/g,'').replace(/%/g,'').replace(/x\s*$/i,'').trim();
+  const n=parseFloat(s);
+  return isNaN(n)?null:n;
+}
+
+/* ---------------- color scale ---------------- */
+function buildScale(values, direction){
+  const nums=values.map(parseNum).filter(v=>v!==null);
+  if(nums.length===0) return ()=>null;
+  const min=Math.min(...nums), max=Math.max(...nums), mid=(min+max)/2;
+  const low = direction==='lowGreen'?GREEN:RED;
+  const high = direction==='lowGreen'?RED:GREEN;
+  return function(raw){
+    const v=parseNum(raw);
+    if(v===null) return null;
+    if(max===min) return WHITE;
+    let c1,c2,t;
+    if(v<=mid){ c1=low; c2=WHITE; t = mid===min?1:(v-min)/(mid-min); }
+    else{ c1=WHITE; c2=high; t = max===mid?1:(v-mid)/(max-mid); }
+    return [0,1,2].map(i=>Math.round(c1[i]+(c2[i]-c1[i])*t));
+  };
+}
+function rgbCss(rgb){ return rgb?`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`:'transparent'; }
+function rgbHex(rgb){ return rgb ? rgb.map(v=>v.toString(16).padStart(2,'0')).join('') : 'FFFFFFFF'; }
+
+/* ---------------- load + render ---------------- */
+function loadPastedData(){
+  const raw=document.getElementById('ws-paste').value;
+  if(!raw.trim()){ return; }
+  const hasHeader=document.getElementById('ws-header').checked;
+  let rows=parsePaste(raw);
+  if(hasHeader) rows=rows.slice(1);
+  const cat=CATEGORIES[currentCategory];
+  currentRows=rows.map(r=>{
+    const row=cat.cols.map((_,i)=>r[i]!==undefined?r[i].trim():'');
+    return row;
+  });
+  renderTable();
+}
+function renderTable(){
+  const cat=CATEGORIES[currentCategory];
+  const container=document.getElementById('ws-table-container');
+  if(currentRows.length===0){
+    container.innerHTML='<div class="empty">No rows loaded yet — paste your data above.</div>';
+    document.getElementById('ws-table-panel').style.display='block';
+    return;
+  }
+  // compute scale per numeric column
+  const scales=cat.cols.map((col,ci)=>{
+    if(!METRIC_RULES[col]) return null;
+    const colValues=currentRows.map(r=>r[ci]);
+    return buildScale(colValues, METRIC_RULES[col]);
+  });
+  let html='<table class="data"><thead><tr>'+cat.cols.map(c=>`<th>${c}</th>`).join('')+'</tr></thead><tbody>';
+  currentRows.forEach((row,ri)=>{
+    html+='<tr>'+row.map((val,ci)=>{
+      const scale=scales[ci];
+      const bg = scale ? rgbCss(scale(val)) : 'transparent';
+      return `<td contenteditable="true" data-r="${ri}" data-c="${ci}" style="background:${bg}" oninput="onCellEdit(this)">${escapeHtml(val)}</td>`;
+    }).join('')+'</tr>';
+  });
+  html+='</tbody></table>';
+  container.innerHTML=html;
+  document.getElementById('ws-table-panel').style.display='block';
+}
+function onCellEdit(td){
+  const r=+td.dataset.r, c=+td.dataset.c;
+  currentRows[r][c]=td.textContent;
+  renderTable();
+}
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ---------------- excel export ---------------- */
+async function downloadExcel(){
+  if(currentRows.length===0) return;
+  const cat=CATEGORIES[currentCategory];
+  const scales=cat.cols.map((col,ci)=>{
+    if(!METRIC_RULES[col]) return null;
+    const colValues=currentRows.map(r=>r[ci]);
+    return buildScale(colValues, METRIC_RULES[col]);
+  });
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(cat.label.replace(/[^\w ]/g,'').slice(0,28));
+  ws.addRow(cat.cols);
+  const headerRow=ws.getRow(1);
+  headerRow.eachCell(cell=>{
+    cell.font={bold:true,color:{argb:'FFFFFFFF'}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF12161C'}};
+  });
+  currentRows.forEach(row=>{
+    const excelRow=ws.addRow(row.map((v,ci)=>{
+      const n=parseNum(v);
+      return (n!==null && METRIC_RULES[cat.cols[ci]]) ? n : v;
+    }));
+    row.forEach((val,ci)=>{
+      const scale=scales[ci];
+      if(scale){
+        const rgb=scale(val);
+        if(rgb){
+          excelRow.getCell(ci+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+rgbHex(rgb)}};
+        }
+      }
+    });
+  });
+  ws.columns.forEach(col=>{ col.width=18; });
+  const buffer=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buffer],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`${cat.label.replace(/\s+/g,'_')}_formatted.xlsx`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ================================================================
+   AI INSIGHTS MODULE (additive — does not alter any function above)
+   Generates dynamic, narrative business insights from whichever
+   breakdown table (month / objective / ad set / region / campaign /
+   platform / demographic) was pasted into the Insights screen.
+   Nothing here is hardcoded to a specific name, month, objective,
+   region or platform — everything is derived from the pasted data.
+   ================================================================ */
+
+/* ---------------- formatting helpers ---------------- */
+function aiFmtINR(n){
+  if(n==null||isNaN(n)) return '—';
+  const abs=Math.abs(n);
+  if(abs>=100000) return '₹'+(n/100000).toFixed(2)+'L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function aiFmtNum(n){ if(n==null||isNaN(n)) return '—'; return Math.round(n).toLocaleString('en-IN'); }
+function aiFmtPct(n,dec){ if(n==null||isNaN(n)) return '—'; return n.toFixed(dec==null?1:dec)+'%'; }
+function aiFmtRoas(n){ if(n==null||isNaN(n)) return '—'; return n.toFixed(2)+'x'; }
+
+/* ---------------- column resolution ---------------- */
+function aiColIdx(headers, exactNames, containsNames){
+  for(const name of (exactNames||[])){
+    const i=headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
+    if(i>=0) return i;
+  }
+  for(const name of (containsNames||[])){
+    const i=headers.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
+    if(i>=0) return i;
+  }
+  return -1;
+}
+function aiResolveCols(headers){
+  const c={};
+  c.month=aiColIdx(headers,[],['month']);
+  c.objective=aiColIdx(headers,[],['objective']);
+  c.adset=aiColIdx(headers,[],['ad set']);
+  c.region=aiColIdx(headers,[],['region']);
+  c.campaign=aiColIdx(headers,[],['campaign']);
+  c.platform=aiColIdx(headers,[],['platform']);
+  c.placement=aiColIdx(headers,[],['placement']);
+  c.gender=aiColIdx(headers,[],['gender']);
+  c.age=aiColIdx(headers,['age'],['age']);
+  c.spend=aiColIdx(headers,[],['amount spent']);
+  c.reach=aiColIdx(headers,['reach'],['reach']);
+  c.impressions=aiColIdx(headers,[],['impressions']);
+  c.cpm=aiColIdx(headers,[],['cpm']);
+  c.clicks=aiColIdx(headers,[],['link clicks']);
+  c.ctr=aiColIdx(headers,[],['ctr']);
+  c.cpc=aiColIdx(headers,[],['cpc']);
+  c.purchases=aiColIdx(headers,['purchases'],[]);
+  if(c.purchases<0){
+    c.purchases=headers.findIndex(h=>{
+      const hl=h.toLowerCase();
+      return hl.includes('purchases') && !hl.includes('conversion') && !hl.includes('cost');
+    });
+  }
+  c.costPerPurchase=aiColIdx(headers,[],['cost per purchase']);
+  c.revenue=aiColIdx(headers,[],['conversion value']);
+  c.roas=aiColIdx(headers,[],['roas']);
+  c.aov=aiColIdx(headers,['aov'],[]);
+  c.convRate=aiColIdx(headers,[],['conv. rate','conv rate']);
+  c.atc=aiColIdx(headers,[],['adds to cart']);
+  c.checkouts=aiColIdx(headers,[],['checkouts initiated']);
+  c.includedAud=aiColIdx(headers,[],['included custom audiences']);
+  c.excludedAud=aiColIdx(headers,[],['excluded custom audiences']);
+  return c;
+}
+
+/* ---------------- numeric helpers ---------------- */
+function aiSumCol(rows, idx){ if(idx<0) return null; return rows.reduce((a,r)=>a+(parseNum(r[idx])||0),0); }
+function aiCalcRoas(spend,revenue){ return (spend!=null && spend>0 && revenue!=null) ? revenue/spend : null; }
+function aiBestRow(rows, idx, higher){
+  let best=null,bestV=null;
+  rows.forEach(r=>{
+    const v=parseNum(r[idx]);
+    if(v==null) return;
+    if(best==null || (higher? v>bestV : v<bestV)){ best=r; bestV=v; }
+  });
+  return best?{row:best,value:bestV}:null;
+}
+function aiLabel(r, idx){ return idx>=0 ? (r[idx]||'—').toString().trim() : '—'; }
+
+/* ---------------- month chronology ---------------- */
+function aiMonthKey(s){
+  if(!s) return null;
+  const m=String(s).match(/([A-Za-z]{3,9})[.\s\-'’]*(\d{2,4})/);
+  if(!m) return null;
+  const map={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const mon=map[m[1].slice(0,3).toLowerCase()];
+  if(mon==null) return null;
+  let yr=parseInt(m[2],10);
+  if(yr<100) yr+=2000;
+  return yr*12+mon;
+}
+function aiQuarterOf(key){ if(key==null) return null; const mIdx=key%12; const yr=Math.floor(key/12); const q=Math.floor(mIdx/3)+1; return `Q${q} ${yr}`; }
+
+/* ================================================================
+   TYPE DETECTION
+   ================================================================ */
+function aiDetectType(headers){
+  const has=name=>headers.some(h=>h.toLowerCase().includes(name));
+  if(has('gender') && has('age')) return 'demographic';
+  if(has('platform') || has('placement')) return 'platform';
+  if(has('ad set')) return 'audience';
+  if(has('region')) return 'region';
+  if(has('campaign')) return 'campaign';
+  if(has('objective')) return 'objective';
+  if(has('month')) return 'month';
+  return 'generic';
+}
+
+/* ================================================================
+   MONTH-WISE
+   ================================================================ */
+function aiInsightsMonth(headers, rows, c){
+  const out=[];
+  const withKey=rows.map(r=>({r,key:aiMonthKey(r[c.month])}))
+                     .filter(x=>x.key!=null)
+                     .sort((a,b)=>a.key-b.key)
+                     .map(x=>x.r);
+  const chron = withKey.length===rows.length ? withKey : rows;
+
+  const withRoas=chron.map(r=>{
+    const spend=parseNum(r[c.spend]);
+    let roas=parseNum(r[c.roas]);
+    if(roas==null){ const rev=parseNum(r[c.revenue]); roas=aiCalcRoas(spend,rev); }
+    return {r,spend,roas,purch:parseNum(r[c.purchases]),rev:parseNum(r[c.revenue])};
+  }).filter(x=>x.roas!=null);
+
+  if(withRoas.length>=2){
+    const sorted=[...withRoas].sort((a,b)=>a.roas-b.roas);
+    const worst=sorted[0], secondWorst=sorted[1];
+    let txt=`${aiLabel(worst.r,c.month)} was the least efficient month despite ${worst.spend!=null?aiFmtINR(worst.spend)+' in spend':'meaningful spend'}, closing at ${aiFmtRoas(worst.roas)} ROAS`;
+    if(secondWorst && secondWorst.roas < worst.roas*1.4){
+      txt+=`, with ${aiLabel(secondWorst.r,c.month)} close behind at ${aiFmtRoas(secondWorst.roas)}`;
+    }
+    const idxInChron=chron.indexOf(worst.r);
+    if(idxInChron>0){
+      const prev=chron[idxInChron-1];
+      const prevSpend=parseNum(prev[c.spend]), prevPurch=parseNum(prev[c.purchases]);
+      if(prevSpend!=null && worst.spend!=null && worst.spend<prevSpend*0.85 && prevPurch!=null && worst.purch!=null && worst.purch<prevPurch*0.85){
+        txt+=`. Both spend and purchase volume declined sharply from ${aiLabel(prev,c.month)}, pointing to reduced campaign investment rather than weakening demand`;
+      }
+      txt+='.';
+    } else { txt+='.'; }
+    out.push({label:'Spend & Performance Trend', text:txt});
+
+    const best=sorted[sorted.length-1];
+    let bestTxt=`${aiLabel(best.r,c.month)} emerged as the strongest month overall, delivering ${aiFmtRoas(best.roas)} ROAS`;
+    if(best.purch!=null) bestTxt+=` with ${aiFmtNum(best.purch)} purchases`;
+    if(best.spend!=null) bestTxt+=` on ${aiFmtINR(best.spend)} spend`;
+    bestTxt+=', suggesting stronger seasonal demand or promotional activity improved efficiency that month.';
+    out.push({label:'', text:bestTxt});
+  }
+
+  if(chron.length>=2){
+    const first=chron[0], last=chron[chron.length-1];
+    const fSpend=parseNum(first[c.spend]), lSpend=parseNum(last[c.spend]);
+    const fPurch=parseNum(first[c.purchases]), lPurch=parseNum(last[c.purchases]);
+    if(fSpend!=null && lSpend!=null && fSpend>0){
+      const spendChange=((lSpend-fSpend)/fSpend)*100;
+      let txt=`Spend moved from ${aiFmtINR(fSpend)} in ${aiLabel(first,c.month)} to ${aiFmtINR(lSpend)} in ${aiLabel(last,c.month)} (${spendChange>=0?'+':''}${spendChange.toFixed(0)}%)`;
+      if(fPurch!=null && lPurch!=null && fPurch>0){
+        const purchChange=((lPurch-fPurch)/fPurch)*100;
+        txt+=`, while purchases moved ${purchChange>=0?'+':''}${purchChange.toFixed(0)}% over the same period`;
+        if(Math.sign(spendChange)!==Math.sign(purchChange) && Math.abs(purchChange)>5){
+          txt+=', indicating efficiency shifted rather than moving in lockstep with budget';
+        }
+      }
+      txt+='.';
+      out.push({label:'Spend & Purchase Trend', text:txt});
+    }
+  }
+
+  if(c.convRate>=0){
+    const vals=chron.map(r=>parseNum(r[c.convRate])).filter(v=>v!=null);
+    if(vals.length>=2){
+      const half=Math.floor(vals.length/2);
+      const firstHalfAvg=vals.slice(0,half||1).reduce((a,b)=>a+b,0)/(half||1);
+      const secondHalfAvg=vals.slice(half).reduce((a,b)=>a+b,0)/(vals.length-half);
+      const dir=secondHalfAvg>firstHalfAvg?'improved':'declined';
+      out.push({label:'Conversion Rate', text:`Conversion rate ${dir} from an average of ${aiFmtPct(firstHalfAvg,2)} in the earlier months to ${aiFmtPct(secondHalfAvg,2)} more recently${dir==='declined'?', suggesting traffic quality may have weakened even where click volume held up':', pointing to healthier funnel performance as the period progressed'}.`});
+    }
+  }
+
+  if(withKey.length===rows.length && withKey.length>=4){
+    const qMap=new Map();
+    withKey.forEach(r=>{
+      const q=aiQuarterOf(aiMonthKey(r[c.month]));
+      if(!qMap.has(q)) qMap.set(q,[]);
+      qMap.get(q).push(r);
+    });
+    if(qMap.size>=2){
+      let bestQ=null,bestQRoas=-Infinity;
+      const qStats=[];
+      qMap.forEach((qRows,q)=>{
+        const qSpend=aiSumCol(qRows,c.spend);
+        const qRev=aiSumCol(qRows,c.revenue);
+        const qRoas=aiCalcRoas(qSpend,qRev);
+        qStats.push({q,qSpend,qRoas});
+        if(qRoas!=null && qRoas>bestQRoas){ bestQRoas=qRoas; bestQ=q; }
+      });
+      const biggestSpendQ=qStats.reduce((a,b)=>(b.qSpend||0)>(a.qSpend||0)?b:a);
+      if(bestQ){
+        out.push({label:'Quarterly Trend', text:`${biggestSpendQ.q} represented the largest investment period at ${aiFmtINR(biggestSpendQ.qSpend)}, while ${bestQ} delivered the strongest efficiency at ${aiFmtRoas(bestQRoas)} ROAS${biggestSpendQ.q===bestQ?'':', indicating budget allocation improved outside the heaviest-spend quarter'}.`});
+      }
+    }
+  }
+
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   OBJECTIVE-WISE
+   ================================================================ */
+function aiInsightsObjective(headers, rows, c){
+  const out=[];
+  const groups=new Map();
+  rows.forEach(r=>{
+    const k=aiLabel(r,c.objective);
+    if(!groups.has(k)) groups.set(k,[]);
+    groups.get(k).push(r);
+  });
+  const totalSpend=aiSumCol(rows,c.spend);
+  const totalPurch=aiSumCol(rows,c.purchases);
+  const stats=[...groups.entries()].map(([k,gRows])=>({
+    name:k,
+    spend:aiSumCol(gRows,c.spend),
+    purch:aiSumCol(gRows,c.purchases),
+    clicks:aiSumCol(gRows,c.clicks),
+    rev:aiSumCol(gRows,c.revenue)
+  }));
+
+  if(stats.length && totalSpend){
+    const bySpend=[...stats].sort((a,b)=>(b.spend||0)-(a.spend||0));
+    const top=bySpend[0];
+    const spendShare=(top.spend/totalSpend)*100;
+    const purchShare=totalPurch? (top.purch/totalPurch)*100 : null;
+    let txt=`${top.name} absorbed ${aiFmtPct(spendShare,0)} of total spend (${aiFmtINR(top.spend)})`;
+    if(purchShare!=null) txt+=` and generated ${aiFmtPct(purchShare,0)} of purchases`;
+    txt+=', making it the primary driver of the account.';
+    out.push({label:'Objective Split', text:txt});
+
+    const noPurchase=stats.filter(s=>(s.purch||0)===0 && (s.clicks||0)>0);
+    if(noPurchase.length){
+      const names=noPurchase.map(s=>s.name).join(' and ');
+      const spendOnThese=noPurchase.reduce((a,s)=>a+(s.spend||0),0);
+      out.push({label:'', text:`${names} accounted for ${aiFmtINR(spendOnThese)} in spend and produced no measurable purchases, indicating these campaigns primarily supported awareness or traffic generation rather than direct conversions.`});
+    }
+
+    if(stats.filter(s=>s.rev!=null && s.spend).length>=2){
+      const withRoas=stats.map(s=>({...s,roas:aiCalcRoas(s.spend,s.rev)})).filter(s=>s.roas!=null);
+      withRoas.sort((a,b)=>b.roas-a.roas);
+      const bestObj=withRoas[0];
+      out.push({label:'Efficiency', text:`${bestObj.name} delivered the strongest return among objectives with measurable revenue, at ${aiFmtRoas(bestObj.roas)} ROAS.`});
+    }
+  }
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   AUDIENCE (AD SET)
+   ================================================================ */
+function aiInsightsAudience(headers, rows, c){
+  const out=[];
+  const withNums=rows.map(r=>{
+    const spend=parseNum(r[c.spend]);
+    const purch=parseNum(r[c.purchases]);
+    const clicks=parseNum(r[c.clicks]);
+    let roas=parseNum(r[c.roas]);
+    const rev=parseNum(r[c.revenue]);
+    if(roas==null) roas=aiCalcRoas(spend,rev);
+    return {r,spend,purch,clicks,roas,rev};
+  });
+
+  const byPurch=aiBestRow(rows,c.purchases,true);
+  const byRoasArr=withNums.filter(x=>x.roas!=null).sort((a,b)=>b.roas-a.roas);
+  const topRoas=byRoasArr[0];
+  if(byPurch || topRoas){
+    let txt='';
+    if(byPurch) txt+=`${aiLabel(byPurch.row,c.adset)} generated the highest purchase volume at ${aiFmtNum(byPurch.value)}`;
+    if(topRoas && (!byPurch || aiLabel(topRoas.r,c.adset)!==aiLabel(byPurch.row,c.adset))){
+      txt+=(txt?', while ':'')+`${aiLabel(topRoas.r,c.adset)} delivered the strongest ROAS at ${aiFmtRoas(topRoas.roas)}`;
+    } else if(topRoas){
+      txt+=`, also posting the strongest ROAS in the account at ${aiFmtRoas(topRoas.roas)}`;
+    }
+    txt+=', both outperforming the account average.';
+    out.push({label:'Top Ad Sets', text:txt});
+  }
+
+  const zeroPurchHighSpend=withNums.filter(x=>(x.purch||0)===0 && x.spend>0).sort((a,b)=>b.spend-a.spend);
+  if(zeroPurchHighSpend.length){
+    const totalWasted=zeroPurchHighSpend.reduce((a,x)=>a+x.spend,0);
+    const names=zeroPurchHighSpend.slice(0,2).map(x=>aiLabel(x.r,c.adset)).join(' and ');
+    out.push({label:'', text:`${names}${zeroPurchHighSpend.length>2?` (and ${zeroPurchHighSpend.length-2} more)`:''} accumulated ${aiFmtINR(totalWasted)} in combined spend without producing a single purchase, making them strong candidates for pausing, creative refreshes or audience refinement.`});
+  }
+
+  const withCTR=withNums.filter(x=>x.clicks>0).map(x=>({...x,convRatio:(x.purch||0)/x.clicks}));
+  if(withCTR.length>=2){
+    const avgRatio=withCTR.reduce((a,x)=>a+x.convRatio,0)/withCTR.length;
+    const poor=withCTR.filter(x=>x.convRatio<avgRatio*0.4);
+    if(poor.length){
+      const worst=poor.sort((a,b)=>b.clicks-a.clicks)[0];
+      out.push({label:'', text:`${aiLabel(worst.r,c.adset)} drew ${aiFmtNum(worst.clicks)} clicks but converted at well below the account average, suggesting a landing page or offer mismatch worth investigating.`});
+    }
+  }
+
+  if(byRoasArr.length){
+    const avgSpend=aiSumCol(rows,c.spend)/rows.length;
+    const scaleCandidate=byRoasArr.find(x=>x.roas>=1.5 && x.spend < avgSpend);
+    if(scaleCandidate){
+      out.push({label:'Scaling Opportunity', text:`${aiLabel(scaleCandidate.r,c.adset)} is producing ${aiFmtRoas(scaleCandidate.roas)} ROAS on comparatively modest spend of ${aiFmtINR(scaleCandidate.spend)}, indicating headroom to scale budget without an immediate efficiency penalty.`});
+    }
+  }
+
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   REGION
+   ================================================================ */
+function aiInsightsRegion(headers, rows, c){
+  const out=[];
+  const bySpend=aiBestRow(rows,c.spend,true);
+  const byReach=aiBestRow(rows,c.reach,true);
+  if(bySpend||byReach){
+    let txt='';
+    const sameRegion = bySpend && byReach && aiLabel(bySpend.row,c.region)===aiLabel(byReach.row,c.region);
+    if(sameRegion){
+      txt=`${aiLabel(bySpend.row,c.region)} led both overall investment (${aiFmtINR(bySpend.value)}) and reach (${aiFmtNum(byReach.value)}) among tracked regions`;
+    } else {
+      if(bySpend) txt+=`${aiLabel(bySpend.row,c.region)} led overall investment at ${aiFmtINR(bySpend.value)}`;
+      if(byReach) txt+=(txt?', while ':'')+`${aiLabel(byReach.row,c.region)} delivered the highest reach at ${aiFmtNum(byReach.value)}`;
+    }
+    txt+='.';
+    out.push({label:'Geographic Performance', text:txt});
+  }
+  const withCpc=rows.map(r=>({r,cpc:parseNum(r[c.cpc])})).filter(x=>x.cpc!=null && x.cpc>0);
+  if(withCpc.length>=2){
+    withCpc.sort((a,b)=>a.cpc-b.cpc);
+    const cheapest=withCpc[0], priciest=withCpc[withCpc.length-1];
+    out.push({label:'', text:`${aiLabel(cheapest.r,c.region)} achieved the lowest CPC among tracked regions at ${aiFmtINR(cheapest.cpc)}, while ${aiLabel(priciest.r,c.region)} was the most expensive at ${aiFmtINR(priciest.cpc)}, suggesting an expansion opportunity in the lower-cost markets if downstream conversion quality holds up.`});
+  }
+  out.push({label:'', text:'Purchase and revenue data is typically not available at the regional level, so these figures should be read as top-of-funnel efficiency indicators rather than full-funnel performance.'});
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   CAMPAIGN
+   ================================================================ */
+function aiInsightsCampaign(headers, rows, c){
+  const out=[];
+  const bySpend=aiBestRow(rows,c.spend,true);
+  const byPurch=aiBestRow(rows,c.purchases,true);
+  const withRoas=rows.map(r=>{
+    const spend=parseNum(r[c.spend]); const rev=parseNum(r[c.revenue]);
+    let roas=parseNum(r[c.roas]); if(roas==null) roas=aiCalcRoas(spend,rev);
+    return {r,spend,roas};
+  }).filter(x=>x.roas!=null);
+  withRoas.sort((a,b)=>b.roas-a.roas);
+
+  if(byPurch){
+    let txt=`${aiLabel(byPurch.row,c.campaign)} generated the largest purchase volume at ${aiFmtNum(byPurch.value)}`;
+    if(withRoas.length){
+      if(aiLabel(withRoas[0].r,c.campaign)!==aiLabel(byPurch.row,c.campaign)){
+        txt+=`, while ${aiLabel(withRoas[0].r,c.campaign)} delivered the strongest ROAS among high-spend campaigns at ${aiFmtRoas(withRoas[0].roas)}`;
+      } else if(withRoas[0].roas>0){
+        txt+=`, also delivering the strongest ROAS among high-spend campaigns at ${aiFmtRoas(withRoas[0].roas)}`;
+      }
+    }
+    txt+='.';
+    out.push({label:'Campaign Performance', text:txt});
+  } else if(bySpend){
+    out.push({label:'Campaign Performance', text:`${aiLabel(bySpend.row,c.campaign)} was the largest campaign by spend at ${aiFmtINR(bySpend.value)}.`});
+  }
+
+  const zeroPurchHighClicks=rows.map(r=>({r,clicks:parseNum(r[c.clicks]),purch:parseNum(r[c.purchases])}))
+    .filter(x=>x.clicks>0 && (x.purch||0)===0)
+    .sort((a,b)=>b.clicks-a.clicks);
+  let flaggedZeroPurch=null;
+  if(zeroPurchHighClicks.length){
+    const top=zeroPurchHighClicks[0];
+    flaggedZeroPurch=aiLabel(top.r,c.campaign);
+    out.push({label:'', text:`${flaggedZeroPurch} generated significant reach and click volume (${aiFmtNum(top.clicks)} clicks) but failed to convert, indicating low commercial intent or landing page inefficiencies.`});
+  }
+
+  if(withRoas.length>=2){
+    const worst=withRoas[withRoas.length-1];
+    if(worst.spend>0 && aiLabel(worst.r,c.campaign)!==flaggedZeroPurch){
+      out.push({label:'', text:`${aiLabel(worst.r,c.campaign)} was the least efficient campaign at ${aiFmtRoas(worst.roas)} ROAS despite ${aiFmtINR(worst.spend)} in spend, and is a candidate for budget reallocation.`});
+    }
+  }
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   PLATFORM / PLACEMENT
+   ================================================================ */
+function aiInsightsPlatform(headers, rows, c){
+  const out=[];
+  const totalSpend=aiSumCol(rows,c.spend);
+  const totalPurch=aiSumCol(rows,c.purchases);
+  if(c.platform>=0){
+    const groups=new Map();
+    rows.forEach(r=>{ const k=aiLabel(r,c.platform); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r); });
+    const stats=[...groups.entries()].map(([k,gRows])=>({name:k,spend:aiSumCol(gRows,c.spend),purch:aiSumCol(gRows,c.purchases)}));
+    stats.sort((a,b)=>(b.spend||0)-(a.spend||0));
+    const top=stats[0];
+    if(top && totalSpend){
+      const spendShare=(top.spend/totalSpend)*100;
+      const purchShare=totalPurch?(top.purch/totalPurch)*100:null;
+      let txt=`${top.name} placements contributed ${aiFmtPct(spendShare,0)} of spend`;
+      if(purchShare!=null) txt+=` and ${aiFmtPct(purchShare,0)} of purchases`;
+      txt+=', the dominant channel in this account.';
+      out.push({label:'Platform Performance', text:txt});
+    }
+  }
+  if(c.placement>=0 && c.costPerPurchase>=0){
+    const withCpp=rows.map(r=>({r,cpp:parseNum(r[c.costPerPurchase])})).filter(x=>x.cpp!=null && x.cpp>0);
+    if(withCpp.length>=2){
+      withCpp.sort((a,b)=>a.cpp-b.cpp);
+      const best=withCpp[0], worst=withCpp[withCpp.length-1];
+      out.push({label:'', text:`Among individual placements, ${aiLabel(best.r,c.placement)} achieved the lowest cost per purchase at ${aiFmtINR(best.cpp)}, while ${aiLabel(worst.r,c.placement)} remained the least efficient at ${aiFmtINR(worst.cpp)}.`});
+    }
+  }
+  if(c.spend>=0 && totalSpend){
+    const groups=new Map();
+    const keyIdx=c.placement>=0?c.placement:c.platform;
+    rows.forEach(r=>{ const k=aiLabel(r,keyIdx); if(!groups.has(k)) groups.set(k,0); groups.set(k,groups.get(k)+(parseNum(r[c.spend])||0)); });
+    const negligible=[...groups.entries()].filter(([k,v])=>v>0 && v/totalSpend<0.02).map(([k])=>k);
+    if(negligible.length){
+      out.push({label:'', text:`${negligible.join(', ')} represented negligible investment (under 2% of spend each) and contributed limited volume to overall account performance.`});
+    }
+  }
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   DEMOGRAPHIC (GENDER + AGE)
+   ================================================================ */
+function aiInsightsDemographic(headers, rows, c){
+  const out=[];
+  const totalSpend=aiSumCol(rows,c.spend);
+  const totalPurch=aiSumCol(rows,c.purchases);
+
+  if(c.gender>=0){
+    const groups=new Map();
+    rows.forEach(r=>{ const k=aiLabel(r,c.gender); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r); });
+    const stats=[...groups.entries()].map(([k,gRows])=>({name:k,spend:aiSumCol(gRows,c.spend),purch:aiSumCol(gRows,c.purchases)}));
+    stats.sort((a,b)=>(b.purch||0)-(a.purch||0));
+    const top=stats[0];
+    if(top && totalPurch){
+      const purchShare=(top.purch/totalPurch)*100;
+      const spendShare=totalSpend?(top.spend/totalSpend)*100:null;
+      out.push({label:'Audience Performance', text:`${top.name} audiences generated ${aiFmtPct(purchShare,0)} of purchases${spendShare!=null?` on ${aiFmtPct(spendShare,0)} of spend`:''}, confirming them as the primary customer base.`});
+    }
+  }
+
+  if(c.age>=0){
+    const groups=new Map();
+    rows.forEach(r=>{ const k=aiLabel(r,c.age); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r); });
+    const stats=[...groups.entries()].map(([k,gRows])=>({
+      name:k,
+      spend:aiSumCol(gRows,c.spend),
+      purch:aiSumCol(gRows,c.purchases),
+      cpp: (()=>{ const s=aiSumCol(gRows,c.spend), p=aiSumCol(gRows,c.purchases); return (p&&p>0)? s/p : null; })()
+    }));
+    stats.sort((a,b)=>(b.purch||0)-(a.purch||0));
+    if(stats.length>=2){
+      const best=stats[0];
+      const worstByPurch=[...stats].sort((a,b)=>(a.purch||0)-(b.purch||0))[0];
+      out.push({label:'', text:`The ${best.name} age group was the largest contributor to purchases at ${aiFmtNum(best.purch)}, while ${worstByPurch.name} produced the lowest volume at ${aiFmtNum(worstByPurch.purch)}${worstByPurch.cpp!=null?`, at a higher acquisition cost of ${aiFmtINR(worstByPurch.cpp)} per purchase`:''}.`});
+
+      const highCpp=stats.filter(s=>s.cpp!=null).sort((a,b)=>b.cpp-a.cpp)[0];
+      if(highCpp && highCpp.name!==best.name){
+        out.push({label:'', text:`${highCpp.name} carried the highest cost per purchase in the breakdown at ${aiFmtINR(highCpp.cpp)}, making it a lower priority for incremental budget.`});
+      }
+    }
+  }
+
+  if(c.gender>=0 && c.age>=0){
+    const combo=new Map();
+    rows.forEach(r=>{
+      const k=aiLabel(r,c.gender)+' '+aiLabel(r,c.age);
+      if(!combo.has(k)) combo.set(k,{spend:0,purch:0});
+      const o=combo.get(k);
+      o.spend+=parseNum(r[c.spend])||0;
+      o.purch+=parseNum(r[c.purchases])||0;
+    });
+    const arr=[...combo.entries()].map(([k,v])=>({name:k,...v}));
+    const bestCombo=arr.sort((a,b)=>b.purch-a.purch)[0];
+    if(bestCombo){
+      out.push({label:'Scaling Recommendation', text:`${bestCombo.name} stands out as the strongest scaling segment, leading on purchase volume with ${aiFmtNum(bestCombo.purch)} purchases on ${aiFmtINR(bestCombo.spend)} spend.`});
+    }
+  }
+
+  return out.filter(x=>x.text).slice(0,5);
+}
+
+/* ================================================================
+   DEEP DIVE INSIGHTS (additive insights workflow only)
+   Uses only the pasted breakdown table and the supplied schema.
+   ================================================================ */
+function deepPct(n){ return n==null || !isFinite(n) ? '—' : n.toFixed(1)+'%'; }
+function deepMoney(n){ return n==null || !isFinite(n) ? '—' : aiFmtINR(n); }
+function deepNum(n){ return n==null || !isFinite(n) ? '—' : aiFmtNum(n); }
+function deepSafeDiv(a,b){ return b!=null && b!==0 && isFinite(a) ? a/b : null; }
+function deepAvg(arr){ const v=arr.filter(x=>x!=null && isFinite(x)); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; }
+function deepMedian(arr){ const v=arr.filter(x=>x!=null && isFinite(x)).sort((a,b)=>a-b); if(!v.length) return null; const m=Math.floor(v.length/2); return v.length%2?v[m]:(v[m-1]+v[m])/2; }
+function deepTrendLabel(first,last,lowerIsBetter=false){
+  if(first==null || last==null) return 'insufficient data';
+  const delta=last-first;
+  const pct=first!==0 ? Math.abs(delta/first)*100 : null;
+  if(pct!=null && pct<5) return 'broadly stable';
+  if(lowerIsBetter) return delta<0 ? 'improving' : 'degrading';
+  return delta>0 ? 'improving' : 'degrading';
+}
+function deepMonthDive(headers,rows,c){
+  const sections=[];
+  const chron=rows.map(r=>({r,key:aiMonthKey(r[c.month])})).filter(x=>x.key!=null).sort((a,b)=>a.key-b.key).map(x=>x.r);
+  const data=chron.length>=2?chron:rows;
+
+  // ROAS / CPA trend
+  const perf=data.map(r=>{
+    const spend=parseNum(r[c.spend]);
+    let roas=parseNum(r[c.roas]);
+    if(roas==null) roas=aiCalcRoas(spend,parseNum(r[c.revenue]));
+    let cpp=parseNum(r[c.costPerPurchase]);
+    if(cpp==null) cpp=deepSafeDiv(spend,parseNum(r[c.purchases]));
+    return {r,spend,roas,cpp};
+  });
+  const roasVals=perf.filter(x=>x.roas!=null);
+  const cppVals=perf.filter(x=>x.cpp!=null);
+  let text='';
+  if(roasVals.length>=2){
+    const first=roasVals[0], last=roasVals[roasVals.length-1];
+    const trend=deepTrendLabel(first.roas,last.roas,false);
+    text+=`ROAS is ${trend}, moving from ${aiFmtRoas(first.roas)} in ${aiLabel(first.r,c.month)} to ${aiFmtRoas(last.roas)} in ${aiLabel(last.r,c.month)}.`;
+  } else text+='ROAS trend cannot be established because at least two valid ROAS observations are required.';
+  if(cppVals.length>=2){
+    const first=cppVals[0], last=cppVals[cppVals.length-1];
+    text+=` CPA is ${deepTrendLabel(first.cpp,last.cpp,true)}, moving from ${deepMoney(first.cpp)} to ${deepMoney(last.cpp)}.`;
+  } else if(cppVals.length===0) text+=' CPA cannot be assessed because purchase volume/cost-per-purchase data is unavailable.';
+  const spends=perf.map(x=>x.spend).filter(v=>v!=null && v>0);
+  if(spends.length>=2){
+    const avg=deepAvg(spends), max=Math.max(...spends), min=Math.min(...spends);
+    const maxRow=perf.find(x=>x.spend===max), minRow=perf.find(x=>x.spend===min);
+    const cv=avg?Math.sqrt(deepAvg(spends.map(v=>(v-avg)**2)))/avg:0;
+    if(cv>0.35 || max>avg*1.5 || min<avg*0.5){
+      text+=` Spend pacing is spiky: ${aiLabel(maxRow.r,c.month)} was the highest-spend month at ${deepMoney(max)}, versus an average of ${deepMoney(avg)}; ${aiLabel(minRow.r,c.month)} was the lowest at ${deepMoney(min)}.`;
+    } else text+=` Spend pacing is relatively consistent, with monthly spend averaging ${deepMoney(avg)} and no major spike relative to the period average.`;
+  }
+  sections.push({title:'ROAS / CPA & Spend Pacing',text});
+
+  // Spend vs revenue growth
+  if(data.length>=2){
+    const first=data[0],last=data[data.length-1];
+    const fs=parseNum(first[c.spend]), ls=parseNum(last[c.spend]);
+    const fr=parseNum(first[c.revenue]), lr=parseNum(last[c.revenue]);
+    if(fs!=null && ls!=null && fs>0 && fr!=null && lr!=null && fr>0){
+      const sg=(ls-fs)/fs*100, rg=(lr-fr)/fr*100;
+      const diff=sg-rg;
+      let verdict;
+      if(Math.abs(diff)<10) verdict='Spend and revenue are growing at broadly similar rates, so scaling efficiency appears relatively stable.';
+      else if(rg>sg) verdict=`Revenue is outpacing spend by ${Math.abs(diff).toFixed(0)} percentage points, indicating that scaling is currently becoming more efficient.`;
+      else verdict=`Spend is growing ${Math.abs(diff).toFixed(0)} percentage points faster than revenue, indicating that efficiency is deteriorating as budget scales.`;
+      sections.push({title:'Scaling Efficiency',text:`From ${aiLabel(first,c.month)} to ${aiLabel(last,c.month)}, spend changed ${sg>=0?'+':''}${sg.toFixed(0)}% while revenue changed ${rg>=0?'+':''}${rg.toFixed(0)}%. ${verdict}`});
+    } else sections.push({title:'Scaling Efficiency',text:'Spend-versus-revenue scaling cannot be assessed because comparable revenue/conversion-value data is missing for the period endpoints.'});
+  }
+  return sections;
+}
+
+function deepObjectiveDive(headers,rows,c){
+  const groups=new Map();
+  rows.forEach(r=>{const k=aiLabel(r,c.objective); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r);});
+  const totalSpend=aiSumCol(rows,c.spend)||0;
+  const stats=[...groups.entries()].map(([name,g])=>({name,spend:aiSumCol(g,c.spend)||0,purch:aiSumCol(g,c.purchases)||0,rev:aiSumCol(g,c.revenue),clicks:aiSumCol(g,c.clicks)||0}));
+  const sales=stats.filter(s=>/(sales|purchase|conversion)/i.test(s.name));
+  const nonRev=stats.filter(s=>/(traffic|click|engagement|awareness|reach|video|view)/i.test(s.name));
+  const salesSpend=sales.reduce((a,s)=>a+s.spend,0);
+  const nonRevSpend=nonRev.reduce((a,s)=>a+s.spend,0);
+  const unknown=stats.filter(s=>!sales.includes(s)&&!nonRev.includes(s));
+  const parts=[];
+  if(totalSpend){
+    let text=`Revenue-focused Sales/Purchase objectives account for ${deepPct(salesSpend/totalSpend*100)} of spend (${deepMoney(salesSpend)}), while identifiable Traffic/Engagement/Awareness-type objectives account for ${deepPct(nonRevSpend/totalSpend*100)} (${deepMoney(nonRevSpend)}).`;
+    const questionable=nonRev.filter(s=>s.spend>0 && s.purch===0);
+    if(questionable.length){ const qs=questionable.reduce((a,s)=>a+s.spend,0); text+=` ${questionable.map(s=>s.name).join(', ')} received ${deepMoney(qs)} with zero purchases, so that non-revenue budget is worth reviewing rather than being treated as automatically wasted.`; }
+    if(!sales.length) text+=' No objective was explicitly identifiable as Sales/Purchase from the objective names, so revenue-focused allocation should be reviewed manually.';
+    parts.push({title:'Objective Spend Mix',text});
+  }
+  const revenueShare=salesSpend/Math.max(totalSpend,1);
+  let priority=`Based on performance data alone, the mix is ${revenueShare>=0.8?'strongly revenue-focused':revenueShare>=0.5?'mixed but revenue-led':'heavily weighted toward non-revenue objectives'}. `;
+  priority+='Brand maturity and the business priority are not provided, so whether the mix is strategically correct for a new versus mature brand cannot be determined from this table alone.';
+  parts.push({title:'Business Priority Alignment',text:priority});
+  return parts;
+}
+
+function deepAudienceType(name){
+  const s=String(name||'').toLowerCase();
+  if(/retarget|remarket|website visitor|past.?buyer|purchaser|engager|warm|custom audience/.test(s)) return 'Retargeting';
+  if(/advantage\+|adv\+|advantage plus/.test(s)) return 'Advantage+';
+  if(/lookalike|\blal\b|similar audience/.test(s)) return 'Lookalike';
+  if(/interest|interests|behavior|behaviour|manual/.test(s)) return 'Interest / Manual';
+  if(/\bbroad\b|open targeting|open audience/.test(s)) return 'Broad';
+  return null;
+}
+function deepAudienceDive(headers,rows,c){
+  const groups=new Map();
+  rows.forEach(r=>{const t=deepAudienceType(aiLabel(r,c.adset)); if(t){if(!groups.has(t)) groups.set(t,[]); groups.get(t).push(r);}});
+  const sections=[];
+  const stats=[...groups.entries()].map(([type,g])=>{const spend=aiSumCol(g,c.spend)||0,p=aiSumCol(g,c.purchases)||0,rev=aiSumCol(g,c.revenue); return {type,spend,p,rev,roas:aiCalcRoas(spend,rev),cpp:deepSafeDiv(spend,p)};}).filter(s=>s.spend>0);
+  if(stats.length){
+    const ranked=stats.filter(s=>s.roas!=null).sort((a,b)=>b.roas-a.roas);
+    let text;
+    if(ranked.length) { const best=ranked[0]; text=`${best.type} is the strongest identifiable audience type at ${aiFmtRoas(best.roas)} ROAS on ${deepMoney(best.spend)} spend`; if(best.cpp!=null) text+=` and ${deepMoney(best.cpp)} CPA`; text+='.'; }
+    else text='ROAS cannot be compared across audience types because conversion value/ROAS is unavailable.';
+    const meaningful=stats.filter(s=>s.spend>=Math.max(1,deepMedian(stats.map(x=>x.spend))*0.25));
+    if(meaningful.length>=2){ const bestCpp=meaningful.filter(s=>s.cpp!=null).sort((a,b)=>a.cpp-b.cpp)[0]; if(bestCpp) text+=` On CPA, ${bestCpp.type} is cheapest among the more meaningfully funded audience types at ${deepMoney(bestCpp.cpp)}.`; }
+    sections.push({title:'Audience Type Efficiency',text});
+  } else sections.push({title:'Audience Type Efficiency',text:'Audience type cannot be reliably classified from the supplied Ad set names, so Broad / Advantage+ / Lookalike / Interest / Retargeting performance cannot be compared safely.'});
+
+  // Frequency is not part of the supplied audience schema.
+  sections.push({title:'Retargeting Pressure',text:'Retargeting over-frequency cannot be assessed from this table because Frequency and Reach are not enough to infer repetition without a frequency metric; the supplied audience schema does not include Frequency. The tool will not invent this conclusion.'});
+
+  const adv=stats.find(s=>s.type==='Advantage+');
+  const manual=stats.filter(s=>['Interest / Manual','Lookalike','Broad'].includes(s.type));
+  if(adv && manual.length){
+    const manualRoas=deepSafeDiv(manual.reduce((a,s)=>a+(s.rev||0),0),manual.reduce((a,s)=>a+s.spend,0));
+    const manualCpp=deepSafeDiv(manual.reduce((a,s)=>a+s.spend,0),manual.reduce((a,s)=>a+s.p,0));
+    let text=`Advantage+ is funded at ${deepMoney(adv.spend)} and delivers ${adv.roas!=null?aiFmtRoas(adv.roas):'no measurable ROAS'}.`;
+    if(adv.roas!=null && manualRoas!=null) text+=` Comparable manually classified audiences deliver ${aiFmtRoas(manualRoas)} blended ROAS, so Advantage+ ${adv.roas>manualRoas?'outperforms':'does not outperform'} the manual group on ROAS.`;
+    else if(adv.cpp!=null && manualCpp!=null) text+=` On CPA, Advantage+ is ${adv.cpp<manualCpp?'better':'not better'} than the blended manual group (${deepMoney(adv.cpp)} vs ${deepMoney(manualCpp)}).`;
+    else text+=' The available data is insufficient for a reliable Advantage+ versus manual comparison.';
+    sections.push({title:'Advantage+ vs Manual Audiences',text});
+  } else sections.push({title:'Advantage+ vs Manual Audiences',text:'A reliable Advantage+ versus manual/legacy audience comparison cannot be made because both sides are not identifiable from the supplied Ad set names.'});
+  return sections;
+}
+
+function deepCampaignDive(headers,rows,c){
+  const stats=rows.map(r=>{const spend=parseNum(r[c.spend])||0,p=parseNum(r[c.purchases])||0,rev=parseNum(r[c.revenue]);let roas=parseNum(r[c.roas]);if(roas==null)roas=aiCalcRoas(spend,rev);let cpp=parseNum(r[c.costPerPurchase]);if(cpp==null)cpp=deepSafeDiv(spend,p);return {name:aiLabel(r,c.campaign),spend,p,rev,roas,cpp};});
+  const totalSpend=stats.reduce((a,s)=>a+s.spend,0), medianSpend=deepMedian(stats.map(s=>s.spend));
+  const blendedRoas=aiCalcRoas(totalSpend,stats.reduce((a,s)=>a+(s.rev||0),0));
+  const risk=stats.filter(s=>s.spend>0 && ((s.roas!=null && blendedRoas!=null && s.roas<blendedRoas*0.75) || (s.p===0))).sort((a,b)=>b.spend-a.spend).slice(0,5);
+  const sections=[];
+  if(risk.length){
+    sections.push({title:'Spend vs Efficiency',text:`Highest-priority budget risks are ${risk.map(s=>`${s.name} (${deepMoney(s.spend)}, ${s.roas!=null?aiFmtRoas(s.roas):'no ROAS'}, ${s.cpp!=null?deepMoney(s.cpp)+' CPA':'no purchases'})`).join('; ')}. These campaigns combine meaningful spend with weak or absent conversion efficiency and should be reviewed before additional budget is added.`});
+  } else sections.push({title:'Spend vs Efficiency',text:'No campaign meets the current high-spend / weak-return risk rule relative to the account-level performance, so there is no clear budget eater to flag.'});
+
+  const sorted=[...stats].sort((a,b)=>b.spend-a.spend);
+  const topShare=totalSpend?sorted[0].spend/totalSpend*100:0;
+  let concentration=`The largest campaign represents ${deepPct(topShare)} of total spend.`;
+  if(topShare>=50) concentration+=' Spend is highly concentrated and should be checked for dependency risk.';
+  else if(topShare>=30) concentration+=' Spend is moderately concentrated; review whether the concentration is supported by efficiency.';
+  else concentration+=' Spend is reasonably diversified across campaigns.';
+  const leader=sorted[0];
+  if(leader && leader.roas!=null && blendedRoas!=null && leader.roas<blendedRoas) concentration+=` The spend leader is below blended ROAS (${aiFmtRoas(leader.roas)} vs ${aiFmtRoas(blendedRoas)}), making the concentration more important to review.`;
+  concentration+=' Campaign age/legacy status cannot be proven from performance data alone.';
+  sections.push({title:'Spend Concentration',text:concentration});
+
+  if(stats.length){
+    let table='<div class="deep-table-wrap"><table class="deep-table"><thead><tr><th>Campaign</th><th>Spend</th><th>Spend %</th><th>ROAS</th><th>CPA</th><th>Purchases</th></tr></thead><tbody>';
+    sorted.forEach(s=>{const share=totalSpend?s.spend/totalSpend*100:0;const weak=s.roas!=null&&blendedRoas!=null&&s.roas<blendedRoas*0.75;table+=`<tr><td>${escapeHtml(s.name)}</td><td>${deepMoney(s.spend)}</td><td>${deepPct(share)}</td><td class="${weak?'deep-bad':'deep-good'}">${s.roas!=null?aiFmtRoas(s.roas):'—'}</td><td>${s.cpp!=null?deepMoney(s.cpp):'—'}</td><td>${deepNum(s.p)}</td></tr>`;});
+    table+='</tbody></table></div>';
+    sections.push({title:'Campaign Ranking — Spend vs Return',html:table});
+  }
+  return sections;
+}
+
+function deepDemographicDive(headers,rows,c){
+  const sections=[];
+  // The supplied demographic schema contains Gender + Age, not campaign/platform type.
+  sections.push({title:'Campaign Type / Vanity Traffic',text:'Campaign type is not present in the supplied demographic table (the schema contains Gender and Age), so Display/Search/Shopping/PMax cannot be isolated here. The tool will not infer campaign type from demographic performance.'});
+  sections.push({title:'Display Review',text:'Display performance cannot be isolated from this demographic table because platform/campaign type is not available.'});
+  sections.push({title:'Search vs Shopping/PMax Allocation',text:'Search versus Shopping/PMax budget allocation cannot be assessed from this demographic table because those campaign types are not columns in the supplied schema.'});
+  // Still provide a useful demographic efficiency read tied to the available columns.
+  if(c.gender>=0 || c.age>=0){
+    const keyIdx=c.age>=0?c.age:c.gender;
+    const groups=new Map();
+    rows.forEach(r=>{const k=aiLabel(r,keyIdx);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);});
+    const stats=[...groups.entries()].map(([name,g])=>{const s=aiSumCol(g,c.spend)||0,p=aiSumCol(g,c.purchases)||0,rev=aiSumCol(g,c.revenue);return{name,s,p,rev,roas:aiCalcRoas(s,rev),cpp:deepSafeDiv(s,p),impr:aiSumCol(g,c.impressions)||0,clicks:aiSumCol(g,c.clicks)||0};});
+    const best=[...stats].filter(x=>x.roas!=null).sort((a,b)=>b.roas-a.roas)[0];
+    if(best) sections.push({title:'Available Demographic Efficiency',text:`Within the available demographic dimensions, ${best.name} has the strongest measurable ROAS at ${aiFmtRoas(best.roas)} on ${deepMoney(best.s)} spend${best.cpp!=null?` and ${deepMoney(best.cpp)} CPA`:''}. This is a demographic insight, not a campaign-type conclusion.`});
+  }
+  return sections;
+}
+
+function generateDeepDiveHtml(headers,rows){
+  const c=aiResolveCols(headers), type=aiDetectType(headers);
+  let sections=[];
+  if(type==='month') sections=deepMonthDive(headers,rows,c);
+  else if(type==='objective') sections=deepObjectiveDive(headers,rows,c);
+  else if(type==='audience') sections=deepAudienceDive(headers,rows,c);
+  else if(type==='campaign') sections=deepCampaignDive(headers,rows,c);
+  else if(type==='demographic') sections=deepDemographicDive(headers,rows,c);
+  else if(type==='platform' || type==='region') sections=[{title:'Deep Dive',text:'No additional Deep Dive questions were defined for this breakdown type. The basic performance insights above remain unchanged.'}];
+  else sections=[{title:'Deep Dive',text:'The pasted table could not be confidently classified into one of the supported breakdowns, so no additional Deep Dive conclusions were generated.'}];
+  let html='<div class="deep-panel"><h3>Deep Dive</h3>';
+  sections.forEach(s=>{html+='<div class="deep-section"><div class="deep-section-title">'+escapeHtml(s.title)+'</div>'+(s.html||('<p class="deep-line">'+escapeHtml(s.text||'')+'</p>'))+'</div>';});
+  html+='</div>';
+  return html;
+}
+
+/* ================================================================
+   DISPATCH + RENDER
+   ================================================================ */
+function generateAIInsightsHtml(headers, rows){
+  const c=aiResolveCols(headers);
+  const type=aiDetectType(headers);
+  let items=[];
+  switch(type){
+    case 'month': items=aiInsightsMonth(headers,rows,c); break;
+    case 'objective': items=aiInsightsObjective(headers,rows,c); break;
+    case 'audience': items=aiInsightsAudience(headers,rows,c); break;
+    case 'region': items=aiInsightsRegion(headers,rows,c); break;
+    case 'campaign': items=aiInsightsCampaign(headers,rows,c); break;
+    case 'platform': items=aiInsightsPlatform(headers,rows,c); break;
+    case 'demographic': items=aiInsightsDemographic(headers,rows,c); break;
+    default: items=[];
+  }
+  if(!items.length){
+    return '<div class="ai-panel"><span class="ai-badge">AI Insights</span><p class="ai-line note">Not enough recognized breakdown columns (Month, Objective, Ad set name, Region, Campaign name, Platform/Placement, or Gender/Age) were found to generate narrative insights for this table.</p></div>';
+  }
+  const typeLabels={month:'Month-wise',objective:'Objective-wise',audience:'Audience (Ad Set)',region:'Region',campaign:'Campaign',platform:'Platform',demographic:'Demographic'};
+  let html='<div class="ai-panel"><span class="ai-badge">AI Insights — '+(typeLabels[type]||'')+'</span>';
+  items.forEach(it=>{
+    html+='<p class="ai-line">'+(it.label?`<strong>${escapeHtml(it.label)}:</strong> `:'')+escapeHtml(it.text)+'</p>';
+  });
+  html+='</div>';
+  return html;
+}
+
+/* ---------------- insights ---------------- */
+function clearInsights(){
+  document.getElementById('ins-paste').value='';
+  document.getElementById('ins-output').innerHTML='';
+}
+function runInsights(){
+  const raw=document.getElementById('ins-paste').value;
+  if(!raw.trim()) return;
+  const hasHeader=document.getElementById('ins-header').checked;
+  let rows=parsePaste(raw);
+  let headers=[];
+  if(hasHeader){ headers=rows[0].map(h=>h.trim()); rows=rows.slice(1); }
+  else{ headers=rows[0].map((_,i)=>'Col '+(i+1)); }
+
+  const idx=name=>headers.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
+  const labelIdx = idx('month')>=0?idx('month'):(idx('campaign')>=0?idx('campaign'):(idx('ad set')>=0?idx('ad set'):(idx('region')>=0?idx('region'):(idx('platform')>=0?idx('platform'):0))));
+  const spendIdx=idx('amount spent');
+  const revIdx=idx('conversion value');
+  const roasIdx=idx('roas');
+  const purchIdx=idx('purchases')>=0 && idx('purchases')!==idx('purchases conversion value') ? headers.findIndex(h=>h.toLowerCase().trim()==='purchases') : -1;
+  const ctrIdx=idx('ctr');
+  const cpcIdx=idx('cpc');
+  const costPerPurchIdx=idx('cost per purchase');
+
+  const num=parseNum;
+  const sum=(rowsArr,i)=> i<0?null: rowsArr.reduce((a,r)=>a+(num(r[i])||0),0);
+  const totalSpend=sum(rows,spendIdx);
+  const totalRev=sum(rows,revIdx);
+  const totalPurch=sum(rows,purchIdx);
+  const overallRoas = (totalSpend && totalRev!==null && totalSpend>0) ? (totalRev/totalSpend) : null;
+  const overallCPP = (totalSpend!==null && totalPurch) ? (totalSpend/totalPurch) : null;
+
+  let statsHtml='<div class="insight-grid">';
+  if(totalSpend!==null) statsHtml+=stat('Total spend','₹'+fmt(totalSpend));
+  if(totalRev!==null) statsHtml+=stat('Total conv. value','₹'+fmt(totalRev));
+  if(overallRoas!==null) statsHtml+=stat('Blended ROAS', overallRoas.toFixed(2)+'x');
+  if(totalPurch) statsHtml+=stat('Total purchases', fmt(totalPurch));
+  if(overallCPP!==null) statsHtml+=stat('Blended cost/purchase','₹'+fmt(overallCPP));
+  statsHtml+='</div>';
+
+  function bestWorst(colIdx,labelName,higherIsBetter,fmtFn){
+    if(colIdx<0) return '';
+    const withVals=rows.map(r=>({label:r[labelIdx]||'—', v:num(r[colIdx])})).filter(x=>x.v!==null);
+    if(withVals.length<2) return '';
+    withVals.sort((a,b)=> higherIsBetter? b.v-a.v : a.v-b.v);
+    const best=withVals[0], worst=withVals[withVals.length-1];
+    return `<div class="panel"><h3>${labelName}</h3>
+      <div class="highlight-row"><span>${escapeHtml(best.label)}</span><span class="tag2 good">${fmtFn(best.v)}</span></div>
+      <div class="highlight-row"><span>${escapeHtml(worst.label)}</span><span class="tag2 bad">${fmtFn(worst.v)}</span></div>
+    </div>`;
+  }
+
+  let highlightsHtml='';
+  highlightsHtml+=bestWorst(roasIdx,'ROAS — best vs. lowest',true,v=>v.toFixed(2)+'x');
+  highlightsHtml+=bestWorst(costPerPurchIdx,'Cost per purchase — cheapest vs. priciest',false,v=>'₹'+fmt(v));
+  highlightsHtml+=bestWorst(ctrIdx,'CTR — best vs. lowest',true,v=>v.toFixed(2)+'%');
+  highlightsHtml+=bestWorst(spendIdx,'Spend — biggest vs. smallest line',true,v=>'₹'+fmt(v));
+
+  const out=document.getElementById('ins-output');
+  out.innerHTML = statsHtml + (highlightsHtml || '<p class="note">Couldn\'t match enough recognized columns (ROAS, CTR, cost per purchase, spend) to build highlights — the totals above are still based on whatever was found.</p>') +
+    '<p class="note" style="margin-top:10px;">This is a general-purpose summary built from whichever standard column names it recognized in your paste. Share your exact insights template if you want the output to follow a fixed format instead.</p>' +
+    generateAIInsightsHtml(headers, rows) + generateDeepDiveHtml(headers, rows);
+
+  function stat(k,v){ return `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`; }
+  function fmt(n){ return Math.round(n).toLocaleString('en-IN'); }
+}
+
+/* ================================================================================
+   RAW DATA → WORKBOOK MODULE  (fully additive)
+   --------------------------------------------------------------------------------
+   Purpose: take one raw Meta Ads Manager export (arbitrary extra columns allowed)
+   and produce every breakdown table required (Month / Objective / Audience /
+   Region / Campaign / Platform / Demographic), export them all as ONE .xlsx
+   workbook (7 worksheets), and let the person open any generated table straight
+   into the EXISTING "conditional formatting" workspace (screen-workspace) or the
+   EXISTING "Insights" screen (screen-insights) with a click.
+
+   Nothing in this module modifies, redefines or duplicates:
+     - parseNum, buildScale, rgbCss, rgbHex   (color-scale engine, reused as-is)
+     - METRIC_RULES, CATEGORIES               (column sets + coloring rules, reused as-is)
+     - openWorkspace/loadPastedData/renderTable/downloadExcel (workspace screen, reused as-is)
+     - runInsights/generateAIInsightsHtml     (insights engine, reused as-is)
+   It only adds: raw-column resolution, grouping/aggregation, a couple of extra
+   column lists for tables that don't already exist in CATEGORIES (Quarter/Year/
+   Age-only/Gender-only summaries), and a multi-sheet workbook writer.
+   ================================================================================ */
+
+/* ---------------- navigation (additive) ---------------- */
+function goRawImport(){
+  document.getElementById('raw-sheets-output').innerHTML='';
+  document.getElementById('raw-status').textContent='';
+  showScreen('screen-rawimport');
+}
+function clearRawImport(){
+  document.getElementById('raw-paste').value='';
+  document.getElementById('raw-file').value='';
+  document.getElementById('raw-sheets-output').innerHTML='';
+  document.getElementById('raw-status').textContent='';
+  rawGeneratedSheets=null;
+}
+function handleRawFileUpload(evt){
+  const file=evt.target.files && evt.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ document.getElementById('raw-paste').value=reader.result; };
+  reader.readAsText(file);
+}
+
+/* ---------------- flexible table parsing (tab OR comma, additive) ----------------
+   The existing parsePaste() assumes tab-separated input (correct for the other
+   two screens, which are paste-from-sheet only). Raw exports may be uploaded as
+   .csv, so this adds delimiter detection on top without changing parsePaste. */
+function rawParseTable(text){
+  const clean=text.replace(/\r/g,'');
+  if(clean.includes('\t')) return parsePaste(clean); // reuse existing tab parser as-is
+  // simple CSV parser (handles quoted fields containing commas)
+  const lines=clean.split('\n').filter(l=>l.length>0);
+  return lines.map(line=>{
+    const cells=[]; let cur=''; let inQuotes=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(inQuotes){
+        if(ch==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else { inQuotes=false; } }
+        else cur+=ch;
+      } else {
+        if(ch==='"') inQuotes=true;
+        else if(ch===','){ cells.push(cur); cur=''; }
+        else cur+=ch;
+      }
+    }
+    cells.push(cur);
+    return cells;
+  });
+}
+
+/* ---------------- raw column resolution (additive — separate from aiResolveCols,
+   since raw exports are ad/day level and need base metrics, not ratio columns) ---------------- */
+function rawFindCol(headers, exactNames, containsNames, excludeSubstrings){
+  const lc=headers.map(h=>h.trim().toLowerCase());
+  for(const name of (exactNames||[])){
+    const i=lc.indexOf(name.toLowerCase());
+    if(i>=0) return i;
+  }
+  for(const name of (containsNames||[])){
+    const i=lc.findIndex(h=>h.includes(name.toLowerCase()) && !(excludeSubstrings||[]).some(ex=>h.includes(ex)));
+    if(i>=0) return i;
+  }
+  return -1;
+}
+function rawResolveCols(headers){
+  const c={};
+  c.date=rawFindCol(headers,['date','day'],['reporting starts','reporting_starts','date']);
+  c.campaign=rawFindCol(headers,[],['campaign name','campaign']);
+  c.adset=rawFindCol(headers,[],['ad set name','ad set','adset']);
+  c.objective=rawFindCol(headers,[],['objective']);
+  c.region=rawFindCol(headers,[],['region','country','state']);
+  c.platform=rawFindCol(headers,[],['platform']);
+  c.placement=rawFindCol(headers,[],['placement']);
+  c.gender=rawFindCol(headers,[],['gender']);
+  c.age=rawFindCol(headers,['age'],['age']);
+  c.spend=rawFindCol(headers,[],['amount spent','spend']);
+  c.reach=rawFindCol(headers,['reach'],['reach']);
+  c.impressions=rawFindCol(headers,[],['impressions']);
+  c.clicks=rawFindCol(headers,[],['link clicks','clicks (all)','clicks']);
+  c.atc=rawFindCol(headers,[],['adds to cart','add to cart']);
+  c.checkouts=rawFindCol(headers,[],['checkouts initiated','checkout initiated']);
+  c.purchases=rawFindCol(headers,['purchases','website purchases'],['purchases'],['value','cost','conversion']);
+  c.revenue=rawFindCol(headers,[],['purchase conversion value','purchases conversion value','conversion value','purchase value','revenue']);
+  return c;
+}
+
+/* ---------------- aggregation helpers (additive) ---------------- */
+function rawSum(rowsArr, idx){ if(idx<0) return 0; return rowsArr.reduce((a,r)=>a+(parseNum(r[idx])||0),0); }
+function rawSumFields(groupRows, c){
+  return {
+    spend:rawSum(groupRows,c.spend), reach:rawSum(groupRows,c.reach), impressions:rawSum(groupRows,c.impressions),
+    clicks:rawSum(groupRows,c.clicks), atc:rawSum(groupRows,c.atc), checkouts:rawSum(groupRows,c.checkouts),
+    purchases:rawSum(groupRows,c.purchases), revenue:rawSum(groupRows,c.revenue)
+  };
+}
+function rawAddSums(a,b){
+  const o={}; ['spend','reach','impressions','clicks','atc','checkouts','purchases','revenue'].forEach(k=>o[k]=(a[k]||0)+(b[k]||0));
+  return o;
+}
+// Derive every ratio metric from summed base metrics (never averages an already-computed ratio).
+function rawDerive(s){
+  return {
+    spend:s.spend, reach:s.reach, impressions:s.impressions,
+    cpm: s.impressions>0 ? s.spend/s.impressions*1000 : null,
+    clicks:s.clicks,
+    ctr: s.impressions>0 ? s.clicks/s.impressions*100 : null,
+    cpc: s.clicks>0 ? s.spend/s.clicks : null,
+    atc:s.atc,
+    costPerAtc: s.atc>0 ? s.spend/s.atc : null,
+    checkouts:s.checkouts,
+    costPerCheckout: s.checkouts>0 ? s.spend/s.checkouts : null,
+    purchases:s.purchases,
+    costPerPurchase: s.purchases>0 ? s.spend/s.purchases : null,
+    revenue:s.revenue,
+    roas: s.spend>0 ? s.revenue/s.spend : null,
+    aov: s.purchases>0 ? s.revenue/s.purchases : null,
+    convRate: s.clicks>0 ? s.purchases/s.clicks*100 : null
+  };
+}
+function rawNumStr(v,dec){ return (v==null||isNaN(v)) ? '' : v.toFixed(dec==null?2:dec); }
+
+// Maps a derived-metrics object onto whichever header string a target column list uses.
+// Covers every header spelling already present in METRIC_RULES/CATEGORIES, plus the
+// couple of extra headers ("ROAS") introduced only by the new Gender-summary table.
+function rawHeaderValueMap(d){
+  return {
+    "Amount spent (INR)": rawNumStr(d.spend,2),
+    "Reach": rawNumStr(d.reach,0),
+    "Impressions": rawNumStr(d.impressions,0),
+    "CPM (cost per 1,000 impressions)": rawNumStr(d.cpm,2),
+    "Link clicks": rawNumStr(d.clicks,0),
+    "CTR (link click-through rate)": rawNumStr(d.ctr,2),
+    "CPC (cost per link click)": rawNumStr(d.cpc,2),
+    "Adds to cart": rawNumStr(d.atc,0),
+    "Cost per add to cart": rawNumStr(d.costPerAtc,2),
+    "Checkouts initiated": rawNumStr(d.checkouts,0),
+    "Checkouts initiated(optional)": rawNumStr(d.checkouts,0),
+    "Cost per checkout initiated": rawNumStr(d.costPerCheckout,2),
+    "Cost per checkout initiated(optional)": rawNumStr(d.costPerCheckout,2),
+    "Purchases": rawNumStr(d.purchases,0),
+    "Cost per purchase": rawNumStr(d.costPerPurchase,2),
+    "Purchases conversion value": rawNumStr(d.revenue,2),
+    "Purchases  conversion value": rawNumStr(d.revenue,2),
+    "Purchase ROAS (return on ad spend)": rawNumStr(d.roas,2),
+    "ROAS": rawNumStr(d.roas,2),
+    "AOV": rawNumStr(d.aov,2),
+    "Conv. Rate": rawNumStr(d.convRate,2)
+  };
+}
+function rawBuildRow(labelValues, cols, derived){
+  const valueMap=rawHeaderValueMap(derived);
+  return cols.map(col=> labelValues.hasOwnProperty(col) ? labelValues[col] : (valueMap.hasOwnProperty(col) ? valueMap[col] : ''));
+}
+
+/* ---------------- extra column sets not already in CATEGORIES (additive) ----------------
+   Built by re-labelling / re-using CATEGORIES.month.cols and CATEGORIES.demographic.cols
+   arrays rather than retyping the metric column list a third time. */
+const RAW_QUARTER_COLS=["Quarter", ...CATEGORIES.month.cols.slice(1)];
+const RAW_YEAR_COLS=["Year", ...CATEGORIES.month.cols.slice(1)];
+const RAW_AGE_SUMMARY_COLS=["Age","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Cost per purchase","Purchases conversion value","Purchase ROAS (return on ad spend)","AOV"];
+const RAW_GENDER_SUMMARY_COLS=["Gender","Amount spent (INR)","Reach","Impressions","CPM (cost per 1,000 impressions)","Link clicks","CTR (link click-through rate)","CPC (cost per link click)","Adds to cart","Cost per add to cart","Checkouts initiated","Cost per checkout initiated","Purchases","Purchases conversion value","Cost per purchase","ROAS","AOV"];
+// Only "ROAS" needs an alias beyond METRIC_RULES itself (Age/Gender/Quarter/Year are
+// label columns, same as "Month"/"Region" etc. already are in METRIC_RULES — no rule, no color).
+const RAW_EXTRA_RULES={"ROAS":"lowRed"};
+function rawRuleFor(col){ return METRIC_RULES[col] || RAW_EXTRA_RULES[col] || null; }
+
+/* ---------------- date → month/quarter/year (additive) ---------------- */
+const RAW_MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function rawMonthInfo(dateStr){
+  if(!dateStr) return null;
+  const s=String(dateStr).trim();
+  let d=new Date(s);
+  if(isNaN(d.getTime())){
+    const m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if(m){
+      let day=+m[1], mon=+m[2], yr=+m[3]; if(yr<100) yr+=2000;
+      // ambiguous DD/MM vs MM/DD — Meta exports use the locale's own format; if the
+      // first part can't be a month (>12), treat it as DD/MM (most common export format).
+      if(mon>12){ const tmp=day; day=mon; mon=tmp; }
+      d=new Date(yr,mon-1,day);
+    }
+  }
+  if(isNaN(d.getTime())) return null;
+  return {label:RAW_MONTH_NAMES[d.getMonth()]+' '+d.getFullYear(), sortKey:d.getFullYear()*12+d.getMonth()};
+}
+// Indian financial year: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+function rawFYQuarter(sortKey){
+  const mIdx=sortKey%12, year=Math.floor(sortKey/12);
+  let q,fy;
+  if(mIdx>=3&&mIdx<=5){ q=1; fy=year; }
+  else if(mIdx>=6&&mIdx<=8){ q=2; fy=year; }
+  else if(mIdx>=9&&mIdx<=11){ q=3; fy=year; }
+  else { q=4; fy=year-1; }
+  const label=`Q${q} FY${String(fy%100).padStart(2,'0')}-${String((fy+1)%100).padStart(2,'0')}`;
+  return {label, sortKey:fy*4+(q-1)};
+}
+
+/* ---------------- generic grouping (additive) ---------------- */
+function rawGroupBy(rows, keyFn){
+  const map=new Map();
+  rows.forEach(r=>{
+    const key=keyFn(r);
+    if(key==null || key==='') return;
+    if(!map.has(key)) map.set(key,[]);
+    map.get(key).push(r);
+  });
+  return map;
+}
+
+/* ---------------- per-sheet table builders (additive) ----------------
+   Each returns {title, cols, rows} — rows already aligned to `cols`, ready both
+   for the workbook writer below AND for handing straight to the existing
+   renderTable()/runInsights() functions untouched. */
+function rawBuildMonthSheet(rows, c){
+  const monthMap=rawGroupBy(rows, r=>{ const mi=rawMonthInfo(r[c.date]); return mi?mi.label:null; });
+  const monthGroups=[...monthMap.entries()].map(([label,gRows])=>{
+    const mi=rawMonthInfo(gRows[0][c.date]);
+    return {label, sortKey:mi.sortKey, sums:rawSumFields(gRows,c)};
+  }).sort((a,b)=>a.sortKey-b.sortKey);
+
+  const monthTableRows=monthGroups.map(g=>rawBuildRow({Month:g.label}, CATEGORIES.month.cols, rawDerive(g.sums)));
+
+  const qMap=new Map();
+  monthGroups.forEach(g=>{
+    const q=rawFYQuarter(g.sortKey);
+    if(!qMap.has(q.label)) qMap.set(q.label,{sortKey:q.sortKey, sums:{spend:0,reach:0,impressions:0,clicks:0,atc:0,checkouts:0,purchases:0,revenue:0}});
+    const o=qMap.get(q.label); o.sums=rawAddSums(o.sums,g.sums);
+  });
+  const quarterTableRows=[...qMap.entries()].sort((a,b)=>a[1].sortKey-b[1].sortKey)
+    .map(([label,o])=>rawBuildRow({Quarter:label}, RAW_QUARTER_COLS, rawDerive(o.sums)));
+
+  const yearSums=monthGroups.reduce((a,g)=>rawAddSums(a,g.sums),{spend:0,reach:0,impressions:0,clicks:0,atc:0,checkouts:0,purchases:0,revenue:0});
+  const yearTableRows=[rawBuildRow({Year:'Full Year'}, RAW_YEAR_COLS, rawDerive(yearSums))];
+
+  return [
+    {title:'Yearly Month Wise Summary', cols:CATEGORIES.month.cols, rows:monthTableRows, categoryKey:'month'},
+    {title:'Quarter Wise Summary (Financial Year)', cols:RAW_QUARTER_COLS, rows:quarterTableRows, categoryKey:null},
+    {title:'Overall Year Summary', cols:RAW_YEAR_COLS, rows:yearTableRows, categoryKey:null}
+  ];
+}
+function rawBuildObjectiveSheet(rows, c){
+  const map=rawGroupBy(rows, r=>{ const mi=rawMonthInfo(r[c.date]); const obj=(r[c.objective]||'').trim(); return (mi&&obj) ? mi.sortKey+'|||'+obj : null; });
+  const groups=[...map.entries()].map(([key,gRows])=>{
+    const [sortKeyStr,objective]=key.split('|||');
+    const mi=rawMonthInfo(gRows[0][c.date]);
+    return {month:mi.label, objective, sortKey:+sortKeyStr, sums:rawSumFields(gRows,c)};
+  }).sort((a,b)=> a.sortKey-b.sortKey || a.objective.localeCompare(b.objective));
+  const tableRows=groups.map(g=>rawBuildRow({Month:g.month, Objective:g.objective}, CATEGORIES.objective.cols, rawDerive(g.sums)));
+  return [{title:'Objective Wise (Month + Objective)', cols:CATEGORIES.objective.cols, rows:tableRows, categoryKey:'objective'}];
+}
+function rawBuildAudienceSheet(rows, c){
+  const map=rawGroupBy(rows, r=>(r[c.adset]||'').trim()||null);
+  const groups=[...map.entries()].map(([name,gRows])=>({name, sums:rawSumFields(gRows,c)})).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const tableRows=groups.map(g=>rawBuildRow({"Ad set name":g.name}, CATEGORIES.audience.cols, rawDerive(g.sums)));
+  return [{title:'Audience Wise (Ad Set, Yearly)', cols:CATEGORIES.audience.cols, rows:tableRows, categoryKey:'audience'}];
+}
+function rawBuildRegionSheet(rows, c){
+  const map=rawGroupBy(rows, r=>(r[c.region]||'').trim()||null);
+  const groups=[...map.entries()].map(([name,gRows])=>({name, sums:rawSumFields(gRows,c)})).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const tableRows=groups.map(g=>rawBuildRow({"Region":g.name}, CATEGORIES.region.cols, rawDerive(g.sums)));
+  return [{title:'Region Wise', cols:CATEGORIES.region.cols, rows:tableRows, categoryKey:'region'}];
+}
+function rawBuildCampaignSheet(rows, c){
+  const map=rawGroupBy(rows, r=>(r[c.campaign]||'').trim()||null);
+  const groups=[...map.entries()].map(([name,gRows])=>({name, sums:rawSumFields(gRows,c)})).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const tableRows=groups.map(g=>rawBuildRow({"Campaign name":g.name}, CATEGORIES.campaign.cols, rawDerive(g.sums)));
+  return [{title:'Campaign Wise', cols:CATEGORIES.campaign.cols, rows:tableRows, categoryKey:'campaign'}];
+}
+function rawBuildPlatformSheet(rows, c){
+  const map=rawGroupBy(rows, r=>{ const p=(r[c.platform]||'').trim(); const pl=(r[c.placement]||'').trim(); return p||pl ? p+'|||'+pl : null; });
+  const groups=[...map.entries()].map(([key,gRows])=>{ const [platform,placement]=key.split('|||'); return {platform,placement, sums:rawSumFields(gRows,c)}; }).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const tableRows=groups.map(g=>rawBuildRow({"Platform":g.platform, "Placement":g.placement}, CATEGORIES.platform.cols, rawDerive(g.sums)));
+  return [{title:'Platform Wise (Platform + Placement)', cols:CATEGORIES.platform.cols, rows:tableRows, categoryKey:'platform'}];
+}
+function rawBuildDemographicSheet(rows, c){
+  const gaMap=rawGroupBy(rows, r=>{ const g=(r[c.gender]||'').trim(); const a=(r[c.age]||'').trim(); return g||a ? g+'|||'+a : null; });
+  const gaGroups=[...gaMap.entries()].map(([key,gRows])=>{ const [gender,age]=key.split('|||'); return {gender,age, sums:rawSumFields(gRows,c)}; }).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const gaRows=gaGroups.map(g=>rawBuildRow({"Gender":g.gender,"Age":g.age}, CATEGORIES.demographic.cols, rawDerive(g.sums)));
+
+  const ageMap=rawGroupBy(rows, r=>(r[c.age]||'').trim()||null);
+  const ageGroups=[...ageMap.entries()].map(([name,gRows])=>({name, sums:rawSumFields(gRows,c)})).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const ageRows=ageGroups.map(g=>rawBuildRow({"Age":g.name}, RAW_AGE_SUMMARY_COLS, rawDerive(g.sums)));
+
+  const genderMap=rawGroupBy(rows, r=>(r[c.gender]||'').trim()||null);
+  const genderGroups=[...genderMap.entries()].map(([name,gRows])=>({name, sums:rawSumFields(gRows,c)})).sort((a,b)=>b.sums.spend-a.sums.spend);
+  const genderRows=genderGroups.map(g=>rawBuildRow({"Gender":g.name}, RAW_GENDER_SUMMARY_COLS, rawDerive(g.sums)));
+
+  return [
+    {title:'Gender + Age', cols:CATEGORIES.demographic.cols, rows:gaRows, categoryKey:'demographic'},
+    {title:'Age Summary', cols:RAW_AGE_SUMMARY_COLS, rows:ageRows, categoryKey:null},
+    {title:'Gender Summary', cols:RAW_GENDER_SUMMARY_COLS, rows:genderRows, categoryKey:null}
+  ];
+}
+
+/* ---------------- workbook writer (additive) ----------------
+   Reuses buildScale/parseNum/rgbHex/METRIC_RULES exactly as the existing
+   downloadExcel() does — only difference is it can stack several titled
+   tables per sheet, and loops over 7 sheets instead of 1. */
+function rawWriteTableToSheet(ws, startRow, title, cols, rows){
+  let r=startRow;
+  ws.getCell(r,1).value=title;
+  ws.getCell(r,1).font={bold:true,size:13,color:{argb:'FF1C5D4A'}};
+  if(cols.length>1) ws.mergeCells(r,1,r,cols.length);
+  r++;
+  cols.forEach((colName,i)=>{
+    const cell=ws.getCell(r,i+1);
+    cell.value=colName;
+    cell.font={bold:true,color:{argb:'FFFFFFFF'}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF12161C'}};
+  });
+  r++;
+  const scales=cols.map((col,ci)=>{
+    const dir=rawRuleFor(col);
+    if(!dir) return null;
+    return buildScale(rows.map(row=>row[ci]), dir);
+  });
+  rows.forEach(row=>{
+    row.forEach((val,ci)=>{
+      const cell=ws.getCell(r,ci+1);
+      const n=parseNum(val);
+      cell.value=(n!==null && rawRuleFor(cols[ci])) ? n : val;
+      const scale=scales[ci];
+      if(scale){
+        const rgb=scale(val);
+        if(rgb) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+rgbHex(rgb)}};
+      }
+    });
+    r++;
+  });
+  return r+1; // blank spacer row before the next table
+}
+async function rawDownloadWorkbook(sheetPlan){
+  const wb=new ExcelJS.Workbook();
+  sheetPlan.forEach(sheet=>{
+    const ws=wb.addWorksheet(sheet.name.replace(/[^\w ]/g,'').slice(0,28));
+    let r=1;
+    sheet.tables.forEach(t=>{ r=rawWriteTableToSheet(ws, r, t.title, t.cols, t.rows); });
+    const maxCols=Math.max(...sheet.tables.map(t=>t.cols.length));
+    for(let i=1;i<=maxCols;i++){ ws.getColumn(i).width=20; }
+  });
+  const buffer=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buffer],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='Audit_Formatter_Output.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- orchestration + UI wiring (additive) ---------------- */
+let rawGeneratedSheets=null; // last-generated sheet plan, so buttons below can act on it without reprocessing
+
+function processRawData(){
+  const raw=document.getElementById('raw-paste').value;
+  const statusEl=document.getElementById('raw-status');
+  const outEl=document.getElementById('raw-sheets-output');
+  if(!raw.trim()){ statusEl.textContent='Paste or upload your raw export first.'; return; }
+
+  let table=rawParseTable(raw);
+  if(table.length<2){ statusEl.textContent='Could not find any data rows — check the paste includes a header row plus at least one data row.'; return; }
+  const headers=table[0].map(h=>h.trim());
+  const rows=table.slice(1).filter(r=>r.some(v=>String(v).trim()!==''));
+
+  const c=rawResolveCols(headers);
+  if(c.spend<0){ statusEl.textContent='Could not find an "Amount Spent" column in the pasted data — check the header row is included.'; return; }
+  if(c.date<0){ statusEl.textContent='Warning: no Date column recognized — the Month Wise sheet will be empty, but the other breakdowns will still be generated.'; }
+  else { statusEl.textContent=''; }
+
+  const sheetPlan=[
+    {name:'Month Wise', key:'month', tables:rawBuildMonthSheet(rows,c)},
+    {name:'Objective Wise', key:'objective', tables:rawBuildObjectiveSheet(rows,c)},
+    {name:'Audience Wise', key:'audience', tables:rawBuildAudienceSheet(rows,c)},
+    {name:'Region Wise', key:'region', tables:rawBuildRegionSheet(rows,c)},
+    {name:'Campaign Wise', key:'campaign', tables:rawBuildCampaignSheet(rows,c)},
+    {name:'Platform Wise', key:'platform', tables:rawBuildPlatformSheet(rows,c)},
+    {name:'Demographic Wise', key:'demographic', tables:rawBuildDemographicSheet(rows,c)}
+  ];
+  rawGeneratedSheets=sheetPlan;
+  renderRawSheetsOutput(sheetPlan);
+}
+
+function renderRawSheetsOutput(sheetPlan){
+  const outEl=document.getElementById('raw-sheets-output');
+  let html='<div class="panel"><h3>Generated workbook</h3><p class="note" style="margin-bottom:14px;">Seven worksheets, matching the existing breakdowns. Download the full workbook, or open any single table straight into the existing formatter or insights screens below.</p>';
+  html+='<div class="row" style="margin-top:0;"><button class="btn accent" onclick="rawDownloadWorkbook(rawGeneratedSheets.map(s=>({name:s.name,tables:s.tables})))">Download Audit_Formatter_Output.xlsx</button></div>';
+  html+='</div>';
+
+  sheetPlan.forEach((sheet,si)=>{
+    html+=`<div class="panel"><h3>${escapeHtml(sheet.name)}</h3>`;
+    sheet.tables.forEach((t,ti)=>{
+      html+=`<div class="highlight-row"><span>${escapeHtml(t.title)} — ${t.rows.length} row${t.rows.length===1?'':'s'}</span><span>`;
+      if(t.categoryKey){
+        html+=`<button class="btn ghost" style="padding:6px 12px;font-size:12.5px;margin-right:8px;" onclick="rawOpenInWorkspace(${si},${ti})">Open in formatter</button>`;
+      }
+      html+=`<button class="btn ghost" style="padding:6px 12px;font-size:12.5px;" onclick="rawOpenInInsights(${si},${ti})">Analyze with AI Insights</button>`;
+      html+=`</span></div>`;
+    });
+    html+='</div>';
+  });
+  outEl.innerHTML=html;
+}
+
+// Hands a generated table to the EXISTING conditional-formatting screen, unchanged —
+// sets the same globals openWorkspace() would, then calls the existing renderTable().
+function rawOpenInWorkspace(si,ti){
+  const sheet=rawGeneratedSheets[si];
+  const t=sheet.tables[ti];
+  if(!t.categoryKey) return;
+  currentCategory=t.categoryKey;
+  const cat=CATEGORIES[t.categoryKey];
+  document.getElementById('ws-title').textContent=cat.label;
+  document.getElementById('ws-title-crumb').textContent=cat.label;
+  document.getElementById('ws-columns').textContent="Columns: "+cat.cols.join(" · ");
+  document.getElementById('ws-paste').value='';
+  currentRows=t.rows.map(r=>r.slice());
+  showScreen('screen-workspace');
+  renderTable(); // existing function, untouched
+}
+
+// Hands a generated table to the EXISTING Insights screen, unchanged — builds the
+// same tab-separated paste the textarea expects, then calls the existing runInsights().
+function rawOpenInInsights(si,ti){
+  const sheet=rawGeneratedSheets[si];
+  const t=sheet.tables[ti];
+  const tsv=[t.cols.join('\t')].concat(t.rows.map(r=>r.join('\t'))).join('\n');
+  document.getElementById('ins-paste').value=tsv;
+  document.getElementById('ins-header').checked=true;
+  showScreen('screen-insights');
+  runInsights(); // existing function, untouched
+}
+</script>
+<!-- ================= ADVANCED ANALYTICS (additive; no existing code, markup or style was modified) ================= -->
+<style>
+  /* ===== Advanced Analytics (ah-*) — isolated classes; reuses existing CSS variables only ===== */
+  .ah-root{margin-top:8px;}
+  .ah-root > .ah-heading{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin:26px 0 12px;}
+  details.ah-card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);margin-bottom:20px;}
+  details.ah-card > summary{cursor:pointer;list-style:none;padding:18px 24px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  details.ah-card > summary::-webkit-details-marker{display:none;}
+  details.ah-card > summary .ah-chev{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);font-weight:400;}
+  details.ah-card[open] > summary{border-bottom:1px solid var(--line);}
+  details.ah-card[open] > summary .ah-chev::after{content:'▲ collapse';}
+  details.ah-card:not([open]) > summary .ah-chev::after{content:'▼ expand';}
+  .ah-body{padding:20px 24px 24px;}
+  .ah-sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:20px 0 8px;}
+  .ah-sub:first-child{margin-top:0;}
+  .ah-msg{font-size:13.5px;line-height:1.6;color:var(--muted);background:var(--accent-soft);border-radius:8px;padding:14px 16px;margin:0 0 14px;}
+  .ah-msg.warn{border-left:3px solid var(--amber);}
+  .ah-msg.err{border-left:3px solid var(--red);color:var(--ink);}
+  .ah-est{font-size:12px;color:var(--amber);margin:10px 0 0;line-height:1.5;}
+  .ah-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;}
+  .ah-input{font-family:'JetBrains Mono',monospace;font-size:12.5px;border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--panel);color:var(--ink);width:100%;min-width:0;}
+  .ah-input:focus{outline:none;border-color:var(--accent);}
+  select.ah-input{width:auto;min-width:160px;max-width:100%;}
+  .ah-field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);}
+  .ah-cfg-table{border-collapse:collapse;width:100%;font-size:13px;}
+  .ah-cfg-table th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;font-weight:500;}
+  .ah-cfg-table td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:middle;}
+  .ah-cfg-table td .ah-input{max-width:170px;}
+  .ah-total{font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .ah-total.bad{color:var(--red);font-weight:600;}
+  .ah-total.ok{color:var(--accent);font-weight:600;}
+  .ah-wrap td{white-space:normal !important;min-width:90px;}
+  .ah-wrap td.ah-reason{min-width:260px;line-height:1.5;font-family:'Inter',sans-serif;}
+  .ah-badge2{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:2px 9px;border-radius:20px;white-space:nowrap;background:var(--accent-soft);color:var(--accent);}
+  .ah-badge2.good{background:#e6f5ea;color:#1c5d38;}
+  .ah-badge2.bad{background:#fbe9e7;color:#a03526;}
+  .ah-badge2.mid{background:#fdf0e1;color:#8a4d12;}
+  .ah-badge2.mute{background:var(--accent-soft);color:var(--muted);}
+  html[data-theme="dark"] .ah-badge2.good{background:#1b3326;color:#7fd39b;}
+  html[data-theme="dark"] .ah-badge2.bad{background:#3a1f1c;color:#f2897b;}
+  html[data-theme="dark"] .ah-badge2.mid{background:#3a2a14;color:#e8b074;}
+  .ah-camp{border:1.5px solid var(--line);border-radius:8px;margin-bottom:10px;}
+  .ah-camp > summary{cursor:pointer;list-style:none;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;}
+  .ah-camp > summary::-webkit-details-marker{display:none;}
+  .ah-camp > summary .ah-score{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;}
+  .ah-camp > summary .ah-why{flex-basis:100%;font-size:12.5px;color:var(--muted);}
+  .ah-camp .ah-camp-body{padding:0 16px 14px;}
+  .ah-up{color:#1c5d38;font-weight:600;} .ah-down{color:#a03526;font-weight:600;}
+  html[data-theme="dark"] .ah-up{color:#7fd39b;} html[data-theme="dark"] .ah-down{color:#f2897b;}
+  .ah-pcts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+  .ah-funnel{margin:14px 0;}
+  .ah-fstage{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .ah-fbarwrap{flex:1;min-width:0;}
+  .ah-fbar{height:38px;border-radius:6px;background:var(--accent);color:#fff;display:flex;align-items:center;padding:0 12px;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;margin:0 auto;}
+  .ah-fconv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;margin:0 0 6px;}
+  .ah-fconv.worst{color:var(--red);font-weight:600;}
+  .ah-alert{border:1.5px solid var(--line);border-left:5px solid var(--accent);border-radius:8px;padding:14px 16px;margin-bottom:12px;}
+  .ah-alert.critical{border-left-color:var(--red);}
+  .ah-alert.warning{border-left-color:var(--amber);}
+  .ah-alert .ah-ah{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+  .ah-alert.critical .ah-ah{color:var(--red);} .ah-alert.warning .ah-ah{color:var(--amber);} .ah-alert.informational .ah-ah{color:var(--accent);}
+  .ah-alert p{margin:0 0 8px;font-size:14px;line-height:1.55;}
+  .ah-alert ul{margin:4px 0 0 18px;padding:0;font-size:13px;color:var(--muted);line-height:1.6;}
+  .ah-alert .ah-whyline{font-size:12.5px;color:var(--muted);}
+  @media (max-width:640px){
+    details.ah-card > summary{padding:14px 16px;} .ah-body{padding:16px;}
+    .ah-fstage{flex-direction:column;align-items:stretch;gap:4px;}
+  }
+  html[data-theme="dark"] .ah-fbar{background:#1c5d4a;}
+</style>
+<script>
+/* =====================================================================================
+   ADVANCED ANALYTICS (additive). Five features rendered below the Demographic-wise panel.
+   - Every function/variable here is prefixed `ah` / `AH` — nothing existing is renamed or edited.
+   - The already-parsed dataset (rows + column map) is captured from processRawData()'s own call to
+     rawBuildDemographicSheet(rows,c); nothing is parsed a second time.
+   - Existing helpers are only *called* (parseNum, escapeHtml, aiFmt*), never modified.
+   - Missing columns / blank values are treated as "unavailable" (null), never as 0.
+   ===================================================================================== */
+const AH={
+  ctx:null,           // {rows,c} captured from the current processRawData run
+  cache:null,         // derived data for the current dataset
+  st:{},              // per-dataset UI state (period selection, funnel campaign, simulator)
+  cfg:{
+    weights:{roas:30,cpa:25,ctr:15,conv:15,cpc:10,cpm:5},
+    targets:{roas:'',cpa:'',ctr:'',conv:'',cpc:'',cpm:''},   // blank = use account average from the data
+    minPurchases:20,
+    an:{recentDays:7,minBaseline:7,info:10,warn:20,crit:40,z:2}
+  }
+};
+const AH_METRICS=[
+  {k:'roas',label:'ROAS',higher:true,fmt:v=>aiFmtRoas(v),hint:'higher is better'},
+  {k:'cpa',label:'CPA (cost per purchase)',short:'CPA',higher:false,fmt:v=>ahMoney(v),hint:'lower is better'},
+  {k:'ctr',label:'CTR',higher:true,fmt:v=>ahPct(v,2),hint:'higher is better'},
+  {k:'conv',label:'Conversion Rate',higher:true,fmt:v=>ahPct(v,2),hint:'purchases ÷ link clicks'},
+  {k:'cpc',label:'CPC',higher:false,fmt:v=>ahMoney(v),hint:'lower is better'},
+  {k:'cpm',label:'CPM',higher:false,fmt:v=>ahMoney(v),hint:'lower is better'}
+];
+
+/* ---------- small helpers ---------- */
+function ahMoney(n){ if(n==null||!isFinite(n)) return '—'; if(Math.abs(n)>=100000) return aiFmtINR(n); return '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function ahPct(n,d){ if(n==null||!isFinite(n)) return '—'; return n.toFixed(d==null?1:d)+'%'; }
+function ahInt(n){ if(n==null||!isFinite(n)) return '—'; return Math.round(n).toLocaleString('en-IN'); }
+function ahSigned(n,d){ if(n==null||!isFinite(n)) return '—'; return (n>0?'+':'')+n.toFixed(d==null?1:d)+'%'; }
+function ahE(s){ return escapeHtml(String(s==null?'':s)); }
+function ahDiv(a,b){ return (a!=null && b!=null && b>0 && isFinite(a) && isFinite(b)) ? a/b : null; }
+// Sum of a column ignoring blank/non-numeric cells. Returns null (NOT 0) if the column is absent or has no numeric value.
+function ahSumCol(rows,idx){
+  if(idx==null||idx<0) return null;
+  let s=0,n=0;
+  for(const r of rows){ const v=parseNum(r[idx]); if(v!=null){ s+=v; n++; } }
+  return n?s:null;
+}
+function ahBase(rows,c){
+  return {spend:ahSumCol(rows,c.spend), impressions:ahSumCol(rows,c.impressions), clicks:ahSumCol(rows,c.clicks),
+          atc:ahSumCol(rows,c.atc), checkouts:ahSumCol(rows,c.checkouts), purchases:ahSumCol(rows,c.purchases),
+          revenue:ahSumCol(rows,c.revenue), n:rows.length};
+}
+// All ratios derived from summed base metrics (never averaged ratios). null = not computable.
+function ahDerive(b){
+  return {
+    spend:b.spend, impressions:b.impressions, clicks:b.clicks, atc:b.atc, checkouts:b.checkouts, purchases:b.purchases, revenue:b.revenue,
+    roas:ahDiv(b.revenue,b.spend),
+    cpa:ahDiv(b.spend,b.purchases),
+    ctr:(b.clicks!=null && b.impressions>0) ? b.clicks/b.impressions*100 : null,
+    cpc:ahDiv(b.spend,b.clicks),
+    cpm:(b.spend!=null && b.impressions>0) ? b.spend/b.impressions*1000 : null,
+    conv:(b.purchases!=null && b.clicks>0) ? b.purchases/b.clicks*100 : null
+  };
+}
+// Calendar day number (UTC days since epoch) from a date cell. Mirrors rawMonthInfo()'s parsing order so
+// the new features agree with the existing Month Wise sheet.
+function ahDay(s){
+  if(s==null) return null;
+  const t=String(s).trim(); if(!t) return null;
+  const toDay=(y,m,d)=>Math.round(Date.UTC(y,m,d)/864e5);
+  let m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+  if(m){ const y=+m[1],mo=+m[2],d=+m[3]; if(mo<1||mo>12||d<1||d>31) return null; return toDay(y,mo-1,d); }
+  const dt=new Date(t);
+  if(!isNaN(dt.getTime())) return toDay(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){
+    let d=+m[1],mo=+m[2],y=+m[3]; if(y<100) y+=2000;
+    if(mo>12){ const tmp=d; d=mo; mo=tmp; }
+    if(mo<1||mo>12||d<1||d>31) return null;
+    return toDay(y,mo-1,d);
+  }
+  return null;
+}
+function ahIso(day){ return new Date(day*864e5).toISOString().slice(0,10); }
+function ahIsoToDay(iso){ const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/864e5) : null; }
+function ahDayLabel(day){ const d=new Date(day*864e5); return d.getUTCDate()+' '+RAW_MONTH_NAMES[d.getUTCMonth()]+' '+d.getUTCFullYear(); }
+function ahMean(a){ return a.length? a.reduce((x,y)=>x+y,0)/a.length : null; }
+function ahSd(a){ if(a.length<2) return null; const m=ahMean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1)); }
+function ahNote(cls,html){ return `<div class="ah-msg ${cls||''}">${html}</div>`; }
+
+/* ---------- per-dataset derived data (computed once, lazily) ---------- */
+function ahData(){
+  if(AH.cache) return AH.cache;
+  const {rows,c}=AH.ctx;
+  const hasCamp=c.campaign>=0;
+  const camps=new Map();
+  if(hasCamp){
+    rows.forEach((r,i)=>{ const k=(r[c.campaign]||'').toString().trim()||'(unnamed campaign)'; if(!camps.has(k)) camps.set(k,[]); camps.get(k).push(i); });
+  }
+  const days=c.date>=0 ? rows.map(r=>ahDay(r[c.date])) : rows.map(()=>null);
+  const dated=days.filter(d=>d!=null);
+  const campList=[...camps.entries()].map(([name,idxs])=>{
+    const rs=idxs.map(i=>rows[i]);
+    return {name,idxs,rows:rs,d:ahDerive(ahBase(rs,c))};
+  });
+  AH.cache={
+    hasCamp, camps:campList, days, datedCount:dated.length,
+    minDay:dated.length?Math.min(...dated):null, maxDay:dated.length?Math.max(...dated):null,
+    distinctDays:new Set(dated).size,
+    acct:ahDerive(ahBase(rows,c))
+  };
+  return AH.cache;
+}
+function ahTargets(){
+  const acct=ahData().acct, out={};
+  AH_METRICS.forEach(m=>{
+    const raw=AH.cfg.targets[m.k]; const n=(raw===''||raw==null)?null:parseFloat(raw);
+    if(n!=null && isFinite(n) && n>0) out[m.k]={v:n,src:'user'};
+    else out[m.k]={v:(acct[m.k]!=null && acct[m.k]>0)?acct[m.k]:null,src:'account'};
+  });
+  return out;
+}
+function ahUserTarget(k){ const n=parseFloat(AH.cfg.targets[k]); return (isFinite(n)&&n>0)?n:null; }
+
+/* =========================== FEATURE 1 — HEALTH SCORE =========================== */
+function ahRatio(m,value,target){
+  if(value==null||target==null||!(target>0)) return null;
+  if(m.higher) return value/target;
+  return value>0 ? target/value : 2;      // lower-is-better metric of 0 beats any target
+}
+function ahRating(r){ return r>=1.1?['Strong','good']:r>=0.9?['Good','good']:r>=0.7?['Needs improvement','mid']:['Weak','bad']; }
+function ahScoreCampaign(d,targets){
+  const w=AH.cfg.weights, totalW=AH_METRICS.reduce((s,m)=>s+(w[m.k]||0),0);
+  const items=[]; let availW=0;
+  AH_METRICS.forEach(m=>{
+    const ratio=ahRatio(m,d[m.k],targets[m.k].v);
+    const wt=w[m.k]||0;
+    if(wt>0 && ratio!=null){ availW+=wt; }
+    items.push({m,value:d[m.k],target:targets[m.k].v,ratio,wt,sub:ratio!=null?Math.min(ratio,1.25)/1.25*100:null});
+  });
+  const avail=items.filter(i=>i.wt>0&&i.ratio!=null);
+  if(!(d.spend>0)) return {ok:false,why:'No spend recorded for this campaign.',items};
+  if(avail.length<3 || availW/totalW<0.5) return {ok:false,why:`Only ${avail.length} of ${items.filter(i=>i.wt>0).length} weighted metrics could be calculated (${Math.round(availW)}% of total weight) — not enough to produce a reliable score.`,items};
+  let score=0;
+  avail.forEach(i=>{ i.nw=i.wt/availW*100; i.contrib=i.sub*i.nw/100; score+=i.contrib; });
+  return {ok:true,score,items,avail,usedW:availW,totalW};
+}
+function ahHealthLabel(s){ return s>=75?['Healthy','good']:s>=50?['Needs Attention','mid']:['Poor','bad']; }
+function ahRenderF1(){
+  const el=document.getElementById('ah-body-1'); if(!el) return;
+  const D=ahData(), T=ahTargets(), w=AH.cfg.weights;
+  let h='';
+  // --- configuration
+  h+='<div class="ah-sub">Targets &amp; weights</div>';
+  h+='<p class="note" style="margin:0 0 10px;">Each metric is scored against a target. Leave a target blank to use your own account-wide figure from this data (shown as placeholder) — no external benchmarks are assumed. Weights must total 100%.</p>';
+  h+='<div class="tablewrap"><table class="ah-cfg-table"><thead><tr><th>Metric</th><th>Your target</th><th>Weight %</th></tr></thead><tbody>';
+  AH_METRICS.forEach(m=>{
+    const acctV=ahData().acct[m.k];
+    h+=`<tr><td>${ahE(m.label)}<div class="note">${ahE(m.hint)}</div></td>`+
+       `<td><input class="ah-input" id="ah-t-${m.k}" type="number" step="any" min="0" value="${ahE(AH.cfg.targets[m.k])}" placeholder="${acctV!=null?ahE(m.fmt(acctV))+' (account)':'n/a'}"></td>`+
+       `<td><input class="ah-input" id="ah-w-${m.k}" type="number" step="any" min="0" value="${w[m.k]}" oninput="ahWeightLive()"></td></tr>`;
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="row"><span class="ah-total" id="ah-wtotal"></span><button class="btn accent" onclick="ahApplyF1()">Apply targets &amp; weights</button><button class="btn ghost" onclick="ahResetF1()">Reset to defaults</button></div>';
+  h+='<div id="ah-f1-err"></div>';
+  // --- results
+  h+='<div class="ah-sub">Campaign scores</div>';
+  if(!D.hasCamp){
+    h+=ahNote('warn','No campaign column was found in the imported data, so campaign-level health scores cannot be calculated.');
+  } else {
+    const res=D.camps.map(cp=>({cp,r:ahScoreCampaign(cp.d,T)}));
+    const scored=res.filter(x=>x.r.ok).sort((a,b)=>b.r.score-a.r.score), unscored=res.filter(x=>!x.r.ok);
+    if(!scored.length) h+=ahNote('warn','No campaign has enough data to be scored. See the reasons below.');
+    h+='<p class="note" style="margin:0 0 10px;">Scoring: each metric is compared with its target (meeting the target = 80 points, 125% of target or better = 100), then weighted. Healthy ≥ 75 · Needs Attention 50–74 · Poor &lt; 50. If a metric is unavailable for a campaign its weight is redistributed over the available ones, and that is stated.</p>';
+    scored.forEach(({cp,r})=>{
+      const [lab,cls]=ahHealthLabel(r.score);
+      const strong=r.avail.filter(i=>i.ratio>=0.9).map(i=>i.m.short||i.m.label), weak=r.avail.filter(i=>i.ratio<0.9).map(i=>i.m.short||i.m.label);
+      const missing=r.items.filter(i=>i.wt>0&&i.ratio==null).map(i=>i.m.short||i.m.label);
+      h+=`<details class="ah-camp"><summary><b>${ahE(cp.name)}</b><span class="ah-score">${Math.round(r.score)}/100</span><span class="ah-badge2 ${cls}">${lab}</span>`+
+         `<span class="ah-why">${strong.length?'On/above target: '+ahE(strong.join(', ')):'No metric on target'}${weak.length?' · Below target: '+ahE(weak.join(', ')):''}${missing.length?' · Unavailable: '+ahE(missing.join(', '))+' (weight redistributed)':''}${(cp.d.purchases!=null&&cp.d.purchases<AH.cfg.minPurchases)?' · ⚠ Low volume: only '+ahInt(cp.d.purchases)+' purchase'+(cp.d.purchases===1?'':'s')+' — interpret this score with caution':''}</span></summary><div class="ah-camp-body">`;
+      h+='<div class="tablewrap"><table class="data ah-wrap"><thead><tr><th>Metric</th><th>Actual</th><th>Target</th><th>Rating</th><th>Weight used</th><th>Points</th></tr></thead><tbody>';
+      r.items.forEach(i=>{
+        if(i.wt>0 && i.ratio!=null){
+          const [rl,rc]=ahRating(i.ratio);
+          h+=`<tr><td>${ahE(i.m.short||i.m.label)}</td><td>${i.m.fmt(i.value)}</td><td>${i.m.fmt(i.target)}${T[i.m.k].src==='account'?' <span class="note">(acct avg)</span>':''}</td><td><span class="ah-badge2 ${rc}">${rl}</span></td><td>${i.nw.toFixed(1)}%</td><td>${i.contrib.toFixed(1)}</td></tr>`;
+        } else {
+          h+=`<tr><td>${ahE(i.m.short||i.m.label)}</td><td>${i.value!=null?i.m.fmt(i.value):'—'}</td><td>${i.target!=null?i.m.fmt(i.target):'—'}</td><td><span class="ah-badge2 mute">${i.wt>0?'Unavailable':'Weight 0'}</span></td><td>—</td><td>—</td></tr>`;
+        }
+      });
+      h+='</tbody></table></div></div></details>';
+    });
+    if(unscored.length){
+      h+='<div class="ah-sub">Not scored</div>';
+      unscored.forEach(({cp,r})=>{ h+=`<div class="highlight-row"><span>${ahE(cp.name)}</span><span class="note">${ahE(r.why)}</span></div>`; });
+    }
+  }
+  el.innerHTML=h;
+  ahWeightLive();
+}
+function ahWeightLive(){
+  const t=document.getElementById('ah-wtotal'); if(!t) return;
+  let s=0; AH_METRICS.forEach(m=>{ const e=document.getElementById('ah-w-'+m.k); s+=e?(parseFloat(e.value)||0):0; });
+  const ok=Math.abs(s-100)<0.001;
+  t.className='ah-total '+(ok?'ok':'bad'); t.textContent='Total weight: '+(+s.toFixed(2))+'%'+(ok?' ✓':' — must equal 100%');
+}
+function ahApplyF1(){
+  const errEl=document.getElementById('ah-f1-err'); const nw={}, nt={}; let s=0;
+  for(const m of AH_METRICS){
+    const wv=parseFloat(document.getElementById('ah-w-'+m.k).value); 
+    if(!isFinite(wv)||wv<0){ errEl.innerHTML=ahNote('err','Weights must be numbers of 0 or more.'); return; }
+    nw[m.k]=wv; s+=wv;
+    const tv=document.getElementById('ah-t-'+m.k).value.trim();
+    if(tv!==''){ const n=parseFloat(tv); if(!isFinite(n)||n<=0){ errEl.innerHTML=ahNote('err',`Target for ${ahE(m.label)} must be a number greater than 0 (or blank to use the account average).`); return; } }
+    nt[m.k]=tv;
+  }
+  if(Math.abs(s-100)>=0.001){ errEl.innerHTML=ahNote('err',`Weights total ${+s.toFixed(2)}% — they must total exactly 100%. Nothing was changed.`); return; }
+  AH.cfg.weights=nw; AH.cfg.targets=nt;
+  ahRenderAll();
+}
+function ahResetF1(){
+  AH.cfg.weights={roas:30,cpa:25,ctr:15,conv:15,cpc:10,cpm:5};
+  AH.cfg.targets={roas:'',cpa:'',ctr:'',conv:'',cpc:'',cpm:''};
+  ahRenderAll();
+}
+
+/* =========================== FEATURE 2 — BUDGET RECOMMENDATIONS =========================== */
+// Compares first half vs second half of a campaign's own date range (history), when it has enough days.
+function ahHalfTrend(cp){
+  const D=ahData(), {rows,c}=AH.ctx;
+  const pts=cp.idxs.map(i=>({d:D.days[i],r:rows[i]})).filter(p=>p.d!=null);
+  const ds=[...new Set(pts.map(p=>p.d))].sort((a,b)=>a-b);
+  if(ds.length<6) return null;
+  const mid=ds[Math.floor(ds.length/2)];
+  const A=ahDerive(ahBase(pts.filter(p=>p.d<mid).map(p=>p.r),c)), B=ahDerive(ahBase(pts.filter(p=>p.d>=mid).map(p=>p.r),c));
+  const ch=(a,b)=> (a!=null&&b!=null&&a>0)?(b-a)/a*100:null;
+  return {roas:ch(A.roas,B.roas),cpa:ch(A.cpa,B.cpa),days:ds.length};
+}
+function ahRecommend(cp,T){
+  const d=cp.d, minP=AH.cfg.minPurchases, warn=AH.cfg.an.warn;
+  if(!(d.spend>0)) return {rec:'Insufficient data',cls:'mute',reason:'No spend recorded.'};
+  if(d.purchases==null) return {rec:'Insufficient data',cls:'mute',reason:'No usable purchases column/values in the data, so efficiency cannot be judged.'};
+  const roasT=T.roas.v, cpaT=T.cpa.v;
+  if(d.purchases===0){
+    if(cpaT!=null && d.spend>=2*cpaT) return {rec:'Reduce/Review',cls:'bad',reason:`${ahMoney(d.spend)} spent with 0 purchases — more than 2× the target CPA (${ahMoney(cpaT)}). Investigate tracking, targeting and landing page.`};
+    return {rec:'Maintain',cls:'',reason:'No purchases yet, but spend is still below 2× the target CPA, so there is not enough evidence to act.'};
+  }
+  const roasR=(d.roas!=null&&roasT!=null)?d.roas/roasT:null, cpaR=(d.cpa!=null&&cpaT!=null)?cpaT/d.cpa:null;
+  if(roasR==null && cpaR==null) return {rec:'Insufficient data',cls:'mute',reason:'Neither ROAS nor CPA could be compared with a target (check revenue / purchase columns).'};
+  if(d.purchases<minP) return {rec:'Maintain',cls:'',reason:`Only ${ahInt(d.purchases)} purchase${d.purchases===1?'':'s'} (below the ${minP} needed to justify a budget change) — too little conversion volume to scale or cut with confidence. Keep monitoring.`};
+  const sig=[]; if(roasR!=null) sig.push(['ROAS',roasR]); if(cpaR!=null) sig.push(['CPA',cpaR]);
+  const parts=[]; if(roasR!=null) parts.push(`ROAS ${aiFmtRoas(d.roas)} vs target ${aiFmtRoas(roasT)}`); if(cpaR!=null) parts.push(`CPA ${ahMoney(d.cpa)} vs target ${ahMoney(cpaT)}`);
+  const good=sig.every(s=>s[1]>=(s[0]==='ROAS'?1.1:1.0)), bad=sig.some(s=>s[1]<0.8);
+  const tr=ahHalfTrend(cp);
+  if(bad) return {rec:'Reduce/Review',cls:'bad',reason:`${parts.join('; ')} with ${ahInt(d.purchases)} purchases — meaningfully worse than target on solid volume. Investigate before spending more.`};
+  if(good){
+    const decl=tr && ((tr.roas!=null && tr.roas<=-warn) || (tr.cpa!=null && tr.cpa>=warn));
+    if(decl) return {rec:'Maintain',cls:'',reason:`${parts.join('; ')}, but efficiency is declining within the period (${tr.roas!=null?'ROAS '+ahSigned(tr.roas)+' ':''}${tr.cpa!=null?'CPA '+ahSigned(tr.cpa):''} second half vs first). Hold the budget and watch the trend.`};
+    return {rec:'Scale',cls:'good',reason:`${parts.join('; ')} on ${ahInt(d.purchases)} purchases${tr?' and no deterioration across the period':''}. Consider a gradual budget increase.`};
+  }
+  return {rec:'Maintain',cls:'',reason:`${parts.join('; ')} — within range of target or mixed signals. Continue monitoring.`};
+}
+function ahRenderF2(){
+  const el=document.getElementById('ah-body-2'); if(!el) return;
+  const D=ahData(), T=ahTargets(); let h='';
+  if(!D.hasCamp){ el.innerHTML=ahNote('warn','No campaign column was found in the imported data, so campaign-level recommendations cannot be generated.'); return; }
+  if(D.camps.length<2) h+=ahNote('warn','Only one campaign was found. Recommendations are shown, but budget shifting needs at least two campaigns.');
+  h+=ahNote('', 'Recommendations use the ROAS / CPA targets from <b>Campaign Health Score</b> (account averages if you left them blank), spend, purchases and — when the data has dates — the trend inside the period. High ROAS alone never triggers “Scale”: it also needs enough purchases and acceptable CPA. These are decision aids; nothing is changed in your ad account.');
+  h+=`<div class="row" style="margin:0 0 14px;"><label class="chk">Minimum purchases needed before recommending a change:&nbsp;<input class="ah-input" id="ah-minp" type="number" min="1" step="1" value="${AH.cfg.minPurchases}" style="width:90px;"></label><button class="btn ghost" onclick="ahApplyMinP()">Apply</button></div>`;
+  const recs=D.camps.map(cp=>({cp,r:ahRecommend(cp,T)}));
+  const cnt={Scale:0,Maintain:0,'Reduce/Review':0,'Insufficient data':0}; recs.forEach(x=>cnt[x.r.rec]++);
+  h+=`<div class="insight-grid"><div class="stat"><div class="k">Scale</div><div class="v">${cnt.Scale}</div></div><div class="stat"><div class="k">Maintain</div><div class="v">${cnt.Maintain}</div></div><div class="stat"><div class="k">Reduce / Review</div><div class="v">${cnt['Reduce/Review']}</div></div><div class="stat"><div class="k">Insufficient data</div><div class="v">${cnt['Insufficient data']}</div></div></div>`;
+  h+='<div class="tablewrap"><table class="data ah-wrap"><thead><tr><th>Campaign</th><th>Current Spend</th><th>ROAS</th><th>Purchases</th><th>Recommendation</th><th>Reason</th></tr></thead><tbody>';
+  recs.slice().sort((a,b)=>(b.cp.d.spend||0)-(a.cp.d.spend||0)).forEach(({cp,r})=>{
+    h+=`<tr><td>${ahE(cp.name)}</td><td>${ahMoney(cp.d.spend)}</td><td>${cp.d.roas!=null?aiFmtRoas(cp.d.roas):'—'}</td><td>${ahInt(cp.d.purchases)}</td><td><span class="ah-badge2 ${r.cls}">${ahE(r.rec)}</span></td><td class="ah-reason">${ahE(r.reason)}</td></tr>`;
+  });
+  h+='</tbody></table></div>';
+  // ---- simulator
+  h+='<div class="ah-sub">Budget allocation simulator</div>';
+  const elig=D.camps.filter(cp=>cp.d.spend>0);
+  if(elig.length<2){ h+=ahNote('warn','The simulator needs at least two campaigns with spend. Not enough data.'); el.innerHTML=h; return; }
+  const sim=AH.st.sim||(AH.st.sim={});
+  const byRoas=elig.filter(cp=>cp.d.roas!=null).sort((a,b)=>a.d.roas-b.d.roas);
+  const firstOf=(cls)=>{ const x=recs.find(x=>x.r.cls===cls && elig.includes(x.cp)); return x?x.cp.name:null; };
+  if(!sim.from||!elig.some(cp=>cp.name===sim.from)) sim.from=firstOf('bad')||(byRoas[0]?byRoas[0].name:elig[0].name);
+  if(!sim.to||!elig.some(cp=>cp.name===sim.to)) sim.to=firstOf('good')||(byRoas.length?byRoas[byRoas.length-1].name:elig[elig.length-1].name);
+  if(sim.to===sim.from){ const o=elig.find(cp=>cp.name!==sim.from); sim.to=o.name; }
+  if(!sim.pct) sim.pct=10;
+  const opts=(sel)=>elig.map(cp=>`<option value="${ahE(cp.name)}"${cp.name===sel?' selected':''}>${ahE(cp.name)}</option>`).join('');
+  h+=`<div class="row" style="margin-top:0;"><label class="ah-field">Take budget from<select class="ah-input" id="ah-sim-from" onchange="ahSimSet()">${opts(sim.from)}</select></label>`+
+     `<label class="ah-field">Move it to<select class="ah-input" id="ah-sim-to" onchange="ahSimSet()">${opts(sim.to)}</select></label>`+
+     `<span class="ah-pcts">${[10,15,20].map(p=>`<button class="btn ${sim.pct===p?'accent':'ghost'}" onclick="ahSimSet(${p})">${p}%</button>`).join('')}</span></div>`;
+  h+=ahSimResult(elig,sim);
+  el.innerHTML=h;
+}
+function ahApplyMinP(){ const v=parseInt(document.getElementById('ah-minp').value,10); if(!(v>=1)) return; AH.cfg.minPurchases=v; ahRenderF2(); }
+function ahSimSet(pct){
+  const sim=AH.st.sim||(AH.st.sim={});
+  const f=document.getElementById('ah-sim-from'), t=document.getElementById('ah-sim-to');
+  if(f) sim.from=f.value; if(t) sim.to=t.value; if(pct) sim.pct=pct;
+  ahRenderF2();
+}
+// Pure calculation on copies — never touches campaign data or any ad account.
+function ahSimResult(elig,sim){
+  const A=elig.find(cp=>cp.name===sim.from), B=elig.find(cp=>cp.name===sim.to);
+  if(!A||!B||A===B) return ahNote('warn','Pick two different campaigns.');
+  const shift=A.d.spend*sim.pct/100;
+  const rowFor=(cp,delta)=>{
+    const f=(cp.d.spend+delta)/cp.d.spend;      // linear scaling factor of this campaign's spend
+    return {name:cp.name,s0:cp.d.spend,s1:cp.d.spend+delta,
+      p0:cp.d.purchases,p1:cp.d.purchases!=null?cp.d.purchases*f:null,
+      r0:cp.d.revenue,r1:cp.d.revenue!=null?cp.d.revenue*f:null};
+  };
+  const a=rowFor(A,-shift), b=rowFor(B,+shift);
+  let h=`<div class="tablewrap" style="margin-top:14px;"><table class="data ah-wrap"><thead><tr><th>Campaign</th><th>Spend now → after</th><th>Purchases now → est.</th><th>Revenue now → est.</th></tr></thead><tbody>`;
+  [a,b].forEach(x=>{ h+=`<tr><td>${ahE(x.name)}</td><td>${ahMoney(x.s0)} → ${ahMoney(x.s1)}</td><td>${x.p0!=null?ahInt(x.p0)+' → '+ahInt(x.p1):'—'}</td><td>${x.r0!=null?ahMoney(x.r0)+' → '+ahMoney(x.r1):'—'}</td></tr>`; });
+  h+='</tbody></table></div>';
+  const lines=[];
+  lines.push(`Shifting ${sim.pct}% of “${ahE(A.name)}” (${ahMoney(shift)}) to “${ahE(B.name)}”; total spend stays unchanged.`);
+  if(a.p0!=null&&b.p0!=null){ const dp=(a.p1-a.p0)+(b.p1-b.p0); lines.push(`Estimated net change in purchases: <b>${dp>=0?'+':''}${dp.toFixed(1)}</b>.`); }
+  if(a.r0!=null&&b.r0!=null){ const dr=(a.r1-a.r0)+(b.r1-b.r0); lines.push(`Estimated net change in revenue: <b>${dr>=0?'+':''}${ahMoney(dr)}</b>.`); }
+  // break-even: share of its current efficiency the destination must keep for the shift not to lose output
+  const be=(A.d.roas!=null&&B.d.roas!=null&&B.d.roas>0)?A.d.roas/B.d.roas:null;
+  const bp=(A.d.purchases!=null&&B.d.purchases!=null&&B.d.purchases>0)?(A.d.purchases/A.d.spend)/(B.d.purchases/B.d.spend):null;
+  if(be!=null) lines.push(`Break-even: “${ahE(B.name)}” must keep at least <b>${Math.min(be*100,999).toFixed(0)}%</b> of its current ROAS on the extra budget for revenue not to fall.`);
+  else if(bp!=null) lines.push(`Break-even: “${ahE(B.name)}” must keep at least <b>${Math.min(bp*100,999).toFixed(0)}%</b> of its current purchases-per-₹ on the extra budget for purchases not to fall.`);
+  if(a.p0==null||b.p0==null) lines.push('Purchases are unavailable for one of these campaigns, so purchase projections are omitted.');
+  h+=`<div class="ah-msg" style="margin-top:12px;">${lines.join('<br>')}</div>`;
+  h+='<p class="ah-est">⚠ ESTIMATE ONLY — assumes each campaign keeps its current efficiency (cost per result) at the new spend level. In practice returns often diminish as budgets rise, and results can differ. This is a what-if on a copy of the numbers; it does not change your data or any ad budget.</p>';
+  if(A.d.purchases!=null && A.d.purchases<AH.cfg.minPurchases || B.d.purchases!=null && B.d.purchases<AH.cfg.minPurchases) h+=ahNote('warn',`One of the selected campaigns has fewer than ${AH.cfg.minPurchases} purchases, so its efficiency figures are statistically weak and the projection is less reliable.`);
+  return h;
+}
+
+/* =========================== FEATURE 3 — PERIOD COMPARISON =========================== */
+function ahInitPeriods(){
+  const D=ahData(); if(AH.st.p) return;
+  const keyOf=day=>{ const d=new Date(day*864e5); return d.getUTCFullYear()*12+d.getUTCMonth(); };
+  const dayset=[...new Set(D.days.filter(d=>d!=null))].sort((a,b)=>a-b);
+  const months=[...new Set(dayset.map(keyOf))];
+  const mStart=k=>Math.round(Date.UTC(Math.floor(k/12),k%12,1)/864e5), mEnd=k=>Math.round(Date.UTC(Math.floor(k/12),k%12+1,0)/864e5);
+  let p;
+  if(months.length>=2){ const a=months[months.length-2], b=months[months.length-1]; p={aS:mStart(a),aE:mEnd(a),bS:mStart(b),bE:mEnd(b)}; }
+  else { const mid=Math.floor((D.minDay+D.maxDay)/2); p={aS:D.minDay,aE:mid,bS:mid+1,bE:D.maxDay}; }
+  AH.st.p={aS:ahIso(p.aS),aE:ahIso(p.aE),bS:ahIso(p.bS),bE:ahIso(p.bE)};
+}
+function ahPctChange(a,b){ if(a==null||b==null) return null; if(a===0) return b===0?0:null; return (b-a)/Math.abs(a)*100; }
+function ahPeriodAgg(sd,ed){
+  const D=ahData(), {rows,c}=AH.ctx;
+  const sel=[]; rows.forEach((r,i)=>{ const d=D.days[i]; if(d!=null && d>=sd && d<=ed) sel.push(r); });
+  const dset=new Set(); D.days.forEach(d=>{ if(d!=null&&d>=sd&&d<=ed) dset.add(d); });
+  return {rows:sel,days:dset.size,d:ahDerive(ahBase(sel,c))};
+}
+function ahRenderF3(){
+  const el=document.getElementById('ah-body-3'); if(!el) return;
+  const D=ahData(), {c}=AH.ctx;
+  if(c.date<0){ el.innerHTML=ahNote('warn','Period comparison is unavailable: no Date column (e.g. “Day” or “Reporting starts”) was recognised in the imported data.'); return; }
+  if(D.datedCount===0){ el.innerHTML=ahNote('warn',`Period comparison is unavailable: none of the values in the date column could be read as dates (${ahInt(AH.ctx.rows.length)} rows checked).`); return; }
+  if(D.distinctDays<2){ el.innerHTML=ahNote('warn','Period comparison is unavailable: the data contains only one distinct date, so there is nothing to compare.'); return; }
+  ahInitPeriods();
+  const p=AH.st.p; let h='';
+  h+=`<p class="note" style="margin:0 0 12px;">Data covers <b>${ahDayLabel(D.minDay)}</b> to <b>${ahDayLabel(D.maxDay)}</b> (${D.distinctDays} days with data). Choose any two date ranges — they don’t have to be consecutive months.${D.datedCount<AH.ctx.rows.length?` ${AH.ctx.rows.length-D.datedCount} row(s) with unreadable dates are excluded.`:''}</p>`;
+  h+=`<div class="ah-grid"><label class="ah-field">Period A — from<input class="ah-input" type="date" id="ah-aS" value="${p.aS}"></label><label class="ah-field">Period A — to<input class="ah-input" type="date" id="ah-aE" value="${p.aE}"></label>`+
+     `<label class="ah-field">Period B — from<input class="ah-input" type="date" id="ah-bS" value="${p.bS}"></label><label class="ah-field">Period B — to<input class="ah-input" type="date" id="ah-bE" value="${p.bE}"></label></div>`;
+  h+='<div class="row" style="margin:0 0 14px;"><button class="btn accent" onclick="ahApplyPeriods()">Compare periods</button></div><div id="ah-p-err"></div>';
+  const aS=ahIsoToDay(p.aS),aE=ahIsoToDay(p.aE),bS=ahIsoToDay(p.bS),bE=ahIsoToDay(p.bE);
+  if([aS,aE,bS,bE].some(x=>x==null)||aS>aE||bS>bE){ h+=ahNote('err','Please enter valid start and end dates (start must not be after end).'); el.innerHTML=h; return; }
+  const A=ahPeriodAgg(aS,aE), B=ahPeriodAgg(bS,bE);
+  const la=`${ahDayLabel(aS)} – ${ahDayLabel(aE)}`, lb=`${ahDayLabel(bS)} – ${ahDayLabel(bE)}`;
+  if(aS<=bE && bS<=aE) h+=ahNote('warn','The two periods overlap, so some days are counted in both.');
+  if(!A.rows.length||!B.rows.length){
+    h+=ahNote('warn',`No data found in ${!A.rows.length?'Period A ('+la+')':''}${!A.rows.length&&!B.rows.length?' and ':''}${!B.rows.length?'Period B ('+lb+')':''}. Pick ranges that fall inside the data.`); el.innerHTML=h; return;
+  }
+  const lenA=aE-aS+1,lenB=bE-bS+1;
+  if(lenA!==lenB) h+=ahNote('warn',`The periods have different lengths (${lenA} vs ${lenB} days), so totals such as spend or purchases are not like-for-like. Ratios (ROAS, CPA, CTR, CPC, Conversion Rate) are still comparable.`);
+  if(A.days<lenA||B.days<lenB) h+=ahNote('', `Days with data — Period A: ${A.days} of ${lenA}; Period B: ${B.days} of ${lenB}.`);
+  const defs=[
+    {k:'spend',label:'Spend',f:ahMoney,dir:0},{k:'impressions',label:'Impressions',f:ahInt,dir:0},
+    'reach',
+    {k:'clicks',label:'Link Clicks',f:ahInt,dir:0},{k:'purchases',label:'Purchases',f:ahInt,dir:1},
+    {k:'roas',label:'ROAS',f:v=>aiFmtRoas(v),dir:1},{k:'cpa',label:'CPA',f:ahMoney,dir:-1},
+    {k:'ctr',label:'CTR',f:v=>ahPct(v,2),dir:1,pp:true},{k:'cpc',label:'CPC',f:ahMoney,dir:-1},
+    {k:'conv',label:'Conversion Rate',f:v=>ahPct(v,2),dir:1,pp:true}
+  ];
+  h+=`<div class="tablewrap"><table class="data ah-wrap"><thead><tr><th>Metric</th><th>Period A<div class="note" style="text-transform:none;color:inherit;opacity:.8;font-weight:400;">${ahE(la)}</div></th><th>Period B<div class="note" style="text-transform:none;color:inherit;opacity:.8;font-weight:400;">${ahE(lb)}</div></th><th>Change</th></tr></thead><tbody>`;
+  const ch={};
+  defs.forEach(m=>{
+    if(m==='reach'){ h+='<tr><td>Reach</td><td colspan="3" class="ah-reason">Not compared — unique reach cannot be summed across daily rows (the same people appear on multiple days), so any total would be misleading.</td></tr>'; return; }
+    const a=A.d[m.k], b=B.d[m.k];
+    if(a==null && b==null){ h+=`<tr><td>${m.label}</td><td colspan="3" class="ah-reason">Not available — the required column/values are missing or the ratio can’t be computed (e.g. zero denominator) in both periods.</td></tr>`; return; }
+    const pc=ahPctChange(a,b); ch[m.k]=pc;
+    let cell, cls='';
+    if(pc==null) cell=(a==null||b==null)?'n/a (value missing in one period)':'n/a (Period A is 0)';
+    else{
+      cell=ahSigned(pc,pc!==0&&Math.abs(pc)<10?2:1);
+      if(m.pp && a!=null && b!=null) cell+=` <span class="note">(${(b-a>=0?'+':'')+(b-a).toFixed(2)} pp)</span>`;
+      if(m.dir!==0 && pc!==0) cls=((pc>0)===(m.dir>0))?'ah-up':'ah-down';
+    }
+    h+=`<tr><td>${m.label}</td><td>${a!=null?m.f(a):'—'}</td><td>${b!=null?m.f(b):'—'}</td><td class="${cls}">${cell}</td></tr>`;
+  });
+  h+='</tbody></table></div>';
+  // auto explanation — built only from the numbers above
+  const ex=[]; const rd=(x)=>Math.abs(x).toFixed(1).replace(/\.0$/,'');
+  const sp=ch.spend, pu=ch.purchases;
+  if(pu!=null && sp!=null){
+    const puS=pu===0?'the same number of purchases':`${rd(pu)}% ${pu>0?'more':'fewer'} purchases`;
+    const spS=sp===0?'spend was unchanged':`spend ${sp>0?'increased':'decreased'} by ${rd(sp)}%`;
+    const conj=(sp===0||pu===0)?'and':(((pu>0)!==(sp>0))?'while':'as');
+    ex.push(`Period B generated ${puS} ${conj} ${spS}.`);
+  } else if(sp!=null) ex.push(`Spend changed by ${ahSigned(sp)} in Period B.`);
+  else if(pu!=null) ex.push(`Purchases changed by ${ahSigned(pu)} in Period B.`);
+  if(ch.cpa!=null && ch.cpa!==0) ex.push(`CPA ${ch.cpa<0?'decreased':'increased'} by approximately ${rd(ch.cpa)}%, indicating ${ch.cpa<0?'improved':'weaker'} acquisition efficiency.`);
+  if(ch.roas!=null && ch.roas!==0) ex.push(`ROAS ${ch.roas>0?'improved':'declined'} by ${rd(ch.roas)}%.`);
+  if(ch.ctr!=null && ch.ctr!==0 && ex.length<4) ex.push(`CTR ${ch.ctr>0?'rose':'fell'} ${rd(ch.ctr)}%.`);
+  if(lenA!==lenB) ex.push('Note: the periods differ in length, so total-based comparisons should be read with care.');
+  h+=ex.length?`<div class="ah-msg" style="margin-top:14px;"><b>Summary:</b> ${ahE(ex.join(' '))}</div>`:ahNote('warn','Not enough comparable metrics to generate a summary.');
+  el.innerHTML=h;
+}
+function ahApplyPeriods(){
+  const g=id=>document.getElementById(id).value;
+  const aS=ahIsoToDay(g('ah-aS')),aE=ahIsoToDay(g('ah-aE')),bS=ahIsoToDay(g('ah-bS')),bE=ahIsoToDay(g('ah-bE'));
+  if([aS,aE,bS,bE].some(x=>x==null)||aS>aE||bS>bE){ document.getElementById('ah-p-err').innerHTML=ahNote('err','Please enter valid start and end dates (start must not be after end).'); return; }
+  AH.st.p={aS:g('ah-aS'),aE:g('ah-aE'),bS:g('ah-bS'),bE:g('ah-bE')};
+  ahRenderF3();
+}
+
+/* =========================== FEATURE 4 — CONVERSION FUNNEL =========================== */
+const AH_STAGES=[
+  {k:'impressions',label:'Impressions'},{k:'clicks',label:'Link Clicks'},{k:'atc',label:'Adds to Cart'},
+  {k:'checkouts',label:'Checkouts Initiated'},{k:'purchases',label:'Purchases'}
+];
+function ahFunnelAdvice(fromK,toK){
+  const key=fromK+'>'+toK;
+  const map={
+    'impressions>clicks':['Many people see the ads but few click.','Investigate creative, targeting or messaging (hook, offer clarity, audience fit, ad frequency).'],
+    'clicks>atc':['People click but rarely add to cart.','Investigate the landing page (relevance to the ad, load speed, product page clarity) and the offer or pricing.'],
+    'atc>checkouts':['Carts are being abandoned before checkout starts.','Investigate shipping-cost visibility, cart UX, trust signals and any forced account creation.'],
+    'checkouts>purchases':['Checkouts start but do not complete.','Investigate the checkout experience, final pricing/fees, payment-method options and payment failures.'],
+    'clicks>checkouts':['Clicks rarely reach checkout (Adds to Cart not available).','Investigate landing page, offer and cart/checkout entry points.'],
+    'clicks>purchases':['Clicks rarely become purchases (intermediate steps not available).','Investigate landing page, offer, pricing and checkout experience; add cart/checkout events to pinpoint the leak.'],
+    'atc>purchases':['Carts rarely become purchases (checkout events not available).','Investigate checkout experience, pricing and payment issues.']
+  };
+  return map[key]||['This is the biggest drop between the two stages shown.','Investigate what happens between these two steps (tracking, page experience, offer).'];
+}
+function ahRenderF4(){
+  const el=document.getElementById('ah-body-4'); if(!el) return;
+  const D=ahData(), {rows,c}=AH.ctx; let h='';
+  const sel=AH.st.fCamp||'';
+  if(D.hasCamp){
+    h+=`<div class="row" style="margin:0 0 14px;"><label class="ah-field">Scope<select class="ah-input" id="ah-fcamp" onchange="ahFunnelSet()"><option value="">All campaigns</option>${D.camps.map(cp=>`<option value="${ahE(cp.name)}"${cp.name===sel?' selected':''}>${ahE(cp.name)}</option>`).join('')}</select></label></div>`;
+  }
+  const scope=(sel&&D.hasCamp)?(D.camps.find(cp=>cp.name===sel)||{rows}):{rows};
+  const d=ahDerive(ahBase(scope.rows,c));
+  const present=AH_STAGES.filter(s=>d[s.k]!=null);
+  const absent=AH_STAGES.filter(s=>d[s.k]==null);
+  if(present.length<2){ el.innerHTML=h+ahNote('warn',`A funnel cannot be generated: at least two stages are needed, but only ${present.length?present.map(s=>s.label).join(', ')+' was':'none were'} found in the data. Looked for: ${AH_STAGES.map(s=>s.label).join(', ')}.`); return; }
+  if(absent.length) h+=ahNote('warn',`Incomplete funnel — not found in the data and therefore not shown (nothing was estimated): <b>${absent.map(s=>ahE(s.label)).join(', ')}</b>. Conversion rates below are between the stages that are available.`);
+  else h+=ahNote('','All five stages were found in the data.');
+  const maxV=Math.max(...present.map(s=>d[s.k]));
+  const wOf=v=>maxV>0?Math.max(10,100*Math.log10(1+Math.max(v,0))/Math.log10(1+maxV)):10;
+  const trans=[];
+  present.forEach((s,i)=>{ if(i>0){ const prev=present[i-1]; trans.push({from:prev,to:s,rate:ahDiv(d[s.k],d[prev.k])}); } });
+  const valid=trans.filter(t=>t.rate!=null);
+  const worst=valid.length?valid.reduce((a,b)=>b.rate<a.rate?b:a):null;
+  h+='<div class="ah-funnel">';
+  present.forEach((s,i)=>{
+    const v=d[s.k]; const t=i>0?trans[i-1]:null;
+    if(t){
+      const isW=worst===t;
+      h+=`<div class="ah-fconv${isW?' worst':''}">${t.rate!=null?'↓ '+ahPct(t.rate*100,t.rate*100<10?2:1)+' of '+ahE(t.from.label)+(isW?' — largest drop-off':'')+(t.rate>1?' (higher than previous stage — see note)':''):'↓ n/a (previous stage is 0)'}</div>`;
+    }
+    h+=`<div class="ah-fstage"><div class="ah-fbarwrap"><div class="ah-fbar" style="width:${wOf(v).toFixed(1)}%">${ahE(s.label)}: ${ahInt(v)}${i===0?' — 100%':''}</div></div></div>`;
+  });
+  h+='</div>';
+  h+='<p class="note">Bar lengths use a logarithmic scale so small later stages stay visible — they are not proportional to the counts. Figures are Meta-reported <b>event counts</b> summed over the selected rows, not unique users.</p>';
+  if(valid.some(t=>t.rate>1)) h+=ahNote('warn','At least one stage is larger than the stage before it. This can happen because counts are events (not unique users), attribution windows differ between metrics, or tracking is incomplete — treat those rates with caution.');
+  // largest drop-off
+  if(worst){
+    const [what,sug]=ahFunnelAdvice(worst.from.k,worst.to.k);
+    h+=`<div class="ah-sub">Largest drop-off</div><div class="ah-msg"><b>${ahE(worst.from.label)} → ${ahE(worst.to.label)}</b>: only ${ahPct(worst.rate*100,2)} continue (${ahPct((1-worst.rate)*100,1)} lost). ${ahE(what)}<br><b>Possible next step:</b> ${ahE(sug)}</div>`;
+    const post=valid.filter(t=>t.from.k!=='impressions');
+    if(worst.from.k==='impressions' && post.length>=2){
+      const w2=post.reduce((a,b)=>b.rate<a.rate?b:a); const [wh2,sg2]=ahFunnelAdvice(w2.from.k,w2.to.k);
+      h+=`<div class="ah-msg"><b>Largest drop-off after the click</b> (Impressions → Clicks is naturally the steepest step): <b>${ahE(w2.from.label)} → ${ahE(w2.to.label)}</b>, ${ahPct(w2.rate*100,1)} continue. ${ahE(wh2)}<br><b>Possible next step:</b> ${ahE(sg2)}</div>`;
+    }
+    h+='<p class="note">These are possible explanations to investigate, not diagnoses — the data alone cannot confirm the cause.</p>';
+  } else h+=ahNote('warn','Conversion rates between stages could not be calculated (a stage total is zero).');
+  el.innerHTML=h;
+}
+function ahFunnelSet(){ const e=document.getElementById('ah-fcamp'); AH.st.fCamp=e?e.value:''; ahRenderF4(); }
+
+/* =========================== FEATURE 5 — ANOMALY DETECTION =========================== */
+function ahSevOf(pct,an){ return pct>=an.crit?'critical':pct>=an.warn?'warning':pct>=an.info?'informational':null; }
+const AH_SEV_LABEL={critical:'Critical',warning:'Warning',informational:'Informational'};
+const AH_SUG={
+  cpc:['Check whether the audience has narrowed, overlapped or saturated.','Review creative performance and ad frequency (fatigue).','Look at placement/platform mix and auction competition for the period.'],
+  ctr:['Review creative performance — fatigue or a weaker hook.','Check recent audience or targeting changes.','Verify messaging still matches the audience and offer.'],
+  cpa:['Check audience changes.','Review creative performance.','Investigate landing-page conversion and checkout.'],
+  spendpurch:['Check that conversion tracking (pixel / events) is still firing correctly.','Review audience, creative and landing-page changes made in this window.','Check whether budget/bid changes pushed spend into lower-quality delivery.'],
+  roas:['Check revenue tracking and average order value.','Review audience and creative performance.','Check offer, pricing or landing-page changes.']
+};
+function ahSeries(rowsIdx){
+  const D=ahData(), {rows,c}=AH.ctx; const m=new Map();
+  rowsIdx.forEach(i=>{ const d=D.days[i]; if(d==null) return; if(!m.has(d)) m.set(d,[]); m.get(d).push(rows[i]); });
+  const days=[...m.keys()].sort((a,b)=>a-b);
+  return days.map(d=>({day:d,rows:m.get(d),b:ahBase(m.get(d),c)}));
+}
+function ahSumBases(list){
+  const out={n:0}; ['spend','impressions','clicks','atc','checkouts','purchases','revenue'].forEach(k=>{
+    let s=0,cnt=0; list.forEach(x=>{ if(x.b[k]!=null){ s+=x.b[k]; cnt++; } }); out[k]=cnt?s:null;
+  }); return out;
+}
+function ahAnalyzeSeries(name,rowsIdx,gMax,an,out){
+  const ser=ahSeries(rowsIdx);
+  if(!ser.length) return {status:'nodata'};
+  const rs=gMax-an.recentDays+1;
+  const rec=ser.filter(x=>x.day>=rs), base=ser.filter(x=>x.day<rs);
+  if(rec.length<2) return {status:'norecent',why:`fewer than 2 days with data in the last ${an.recentDays} days`};
+  if(base.length<an.minBaseline) return {status:'nohist',why:`only ${base.length} baseline day${base.length===1?'':'s'} before the recent window (need ${an.minBaseline})`};
+  const rD=ahDerive(ahSumBases(rec)), bD=ahDerive(ahSumBases(base));
+  const dailyOf=(k)=>base.map(x=>ahDerive(x.b)[k]).filter(v=>v!=null&&isFinite(v));
+  const zOf=(k,val)=>{ const vals=dailyOf(k); if(vals.length<an.minBaseline) return {ok:false}; const mu=ahMean(vals), sd=ahSd(vals);
+    const z=(sd&&sd>0)?(val-mu)/sd:(val===mu?0:(val>mu?Infinity:-Infinity)); return {ok:true,z,mu,sd,n:vals.length}; };
+  const scope=name;
+  const period=`${ahDayLabel(rs)} – ${ahDayLabel(gMax)}`, baseP=`${ahDayLabel(base[0].day)} – ${ahDayLabel(base[base.length-1].day)}`;
+  const mk=(sev,key,msg,why)=>out.push({sev,key,scope,msg,why,sug:AH_SUG[key]});
+  // ratio metrics: bad direction up (cpc, cpa) or down (ctr)
+  [{k:'cpc',label:'CPC',up:true,f:ahMoney},{k:'cpa',label:'Cost per purchase (CPA)',up:true,f:ahMoney},{k:'ctr',label:'CTR',up:false,f:v=>ahPct(v,2)}].forEach(m=>{
+    const b=bD[m.k], r=rD[m.k]; if(b==null||r==null||b<=0) return;
+    const pct=m.up?(r-b)/b*100:(b-r)/b*100;           // magnitude of change in the BAD direction
+    const sev=ahSevOf(pct,an); if(!sev) return;
+    const zz=zOf(m.k,r); if(!zz.ok) return;
+    const zBad=m.up?zz.z:-zz.z; if(!(zBad>=an.z)) return;      // must also exceed normal day-to-day variability
+    mk(sev,m.k,`${ahE(scope)} experienced a ${pct.toFixed(0)}% ${m.up?'increase':'decrease'} in ${m.label} compared with the baseline (${m.f(b)} → ${m.f(r)}).`,
+      `Recent window ${period} vs baseline ${baseP} (${base.length} days). Change of ${pct.toFixed(1)}% meets the ${AH_SEV_LABEL[sev]} threshold (${sev==='critical'?an.crit:sev==='warning'?an.warn:an.info}%), and the recent value is ${isFinite(zBad)?zBad.toFixed(1):'far'} standard deviations ${m.up?'above':'below'} the baseline’s normal daily range (needs ≥ ${an.z}).`);
+  });
+  // spend up while purchases down (per active day)
+  const bd=base.length, rdn=rec.length;
+  if(bD.spend!=null&&rD.spend!=null&&bD.purchases!=null&&rD.purchases!=null && bD.spend>0 && bD.purchases>0){
+    const spPD=(rD.spend/rdn-bD.spend/bd)/(bD.spend/bd)*100, puPD=((bD.purchases/bd)-(rD.purchases/rdn))/(bD.purchases/bd)*100;
+    const mag=Math.min(spPD,puPD), sev=(spPD>0&&puPD>0)?ahSevOf(mag,an):null;
+    if(sev){
+      const vals=base.map(x=>x.b.purchases).filter(v=>v!=null);
+      const mu=ahMean(vals), sd=ahSd(vals); const z=(sd&&sd>0)?((rD.purchases/rdn)-mu)/sd:null;
+      if(vals.length>=an.minBaseline && z!=null && -z>=an.z)
+        mk(sev,'spendpurch',`${ahE(scope)}: average daily spend rose ${spPD.toFixed(0)}% while average daily purchases fell ${puPD.toFixed(0)}% versus the baseline.`,
+          `Recent window ${period} vs baseline ${baseP}. Both moves exceed the ${AH_SEV_LABEL[sev]} threshold, and daily purchases are ${(-z).toFixed(1)} standard deviations below the baseline average (needs ≥ ${an.z}).`);
+    }
+  }
+  // ROAS vs the user's configured target (only if the user actually set one)
+  const rt=ahUserTarget('roas');
+  if(rt!=null && rD.roas!=null && rD.spend>0){
+    const short=(rt-rD.roas)/rt*100, sev=ahSevOf(short,an);
+    if(sev) mk(sev,'roas',`${ahE(scope)}: ROAS is ${aiFmtRoas(rD.roas)}, ${short.toFixed(0)}% below your target of ${aiFmtRoas(rt)}.`,
+      `Recent window ${period}. The shortfall of ${short.toFixed(1)}% meets the ${AH_SEV_LABEL[sev]} threshold (${sev==='critical'?an.crit:sev==='warning'?an.warn:an.info}%). This check uses the ROAS target you configured under Campaign Health Score.`);
+  }
+  return {status:'ok',rec:rec.length,base:base.length,period,baseP};
+}
+function ahRenderF5(){
+  const el=document.getElementById('ah-body-5'); if(!el) return;
+  const D=ahData(), {c}=AH.ctx, an=AH.cfg.an; let h='';
+  h+='<div class="ah-sub">Alert settings</div>';
+  const fld=(id,label,val)=>`<label class="ah-field">${label}<input class="ah-input" id="ah-an-${id}" type="number" step="any" min="0" value="${val}"></label>`;
+  h+='<div class="ah-grid">'+fld('recent','Recent window (days)',an.recentDays)+fld('base','Min. baseline days',an.minBaseline)+fld('info','Informational ≥ (% change)',an.info)+fld('warn','Warning ≥ (% change)',an.warn)+fld('crit','Critical ≥ (% change)',an.crit)+fld('z','Min. std-devs from normal',an.z)+'</div>';
+  h+='<div class="row" style="margin:0 0 6px;"><button class="btn accent" onclick="ahApplyF5()">Apply settings</button><button class="btn ghost" onclick="ahResetF5()">Reset</button></div><div id="ah-an-err"></div>';
+  h+='<p class="note">Method: the most recent window is compared with the average of all earlier days (baseline). An alert fires only when the change passes your % threshold <i>and</i> is also unusual compared with the baseline’s own day-to-day variability — so normal fluctuations are ignored.</p>';
+  h+='<div class="ah-sub">Alerts</div>';
+  if(c.date<0||D.datedCount===0){ el.innerHTML=h+ahNote('warn','Anomaly detection is unavailable: no usable dates were found, so there is no history to compare against. Nothing was assumed.'); return; }
+  if(D.distinctDays<an.recentDays+an.minBaseline){ el.innerHTML=h+ahNote('warn',`Not enough history: the data has ${D.distinctDays} distinct day(s), but a recent window of ${an.recentDays} days plus a baseline of ${an.minBaseline} days needs at least ${an.recentDays+an.minBaseline}. No trend can be reliably detected — adjust the settings or import a longer date range.`); return; }
+  const out=[]; const skipped=[];
+  const series=[{name:'Account (all campaigns)',idx:AH.ctx.rows.map((_,i)=>i)}];
+  if(D.hasCamp) D.camps.forEach(cp=>series.push({name:cp.name,idx:cp.idxs}));
+  let analysed=0;
+  series.forEach(s=>{ const r=ahAnalyzeSeries(s.name,s.idx,D.maxDay,an,out); if(r.status==='ok') analysed++; else skipped.push({name:s.name,why:r.why||'no dated rows'}); });
+  const order={critical:0,warning:1,informational:2}; out.sort((a,b)=>order[a.sev]-order[b.sev]);
+  h+=`<p class="note" style="margin:0 0 12px;">Recent window: <b>${ahDayLabel(D.maxDay-an.recentDays+1)} – ${ahDayLabel(D.maxDay)}</b>. ${analysed} of ${series.length} series had enough data to analyse.</p>`;
+  if(ahUserTarget('roas')==null) h+=ahNote('', 'ROAS-vs-target alerts are off: set a ROAS target under <b>Campaign Health Score</b> to enable them.');
+  if(!analysed) h+=ahNote('warn','No series had enough history in the recent and baseline windows, so no anomaly detection was possible.');
+  else if(!out.length) h+=ahNote('','No significant anomalies detected with the current thresholds.');
+  out.forEach(a=>{
+    h+=`<div class="ah-alert ${a.sev}"><div class="ah-ah">Performance alert — ${AH_SEV_LABEL[a.sev]}</div><p>${a.msg}</p><div class="ah-whyline"><b>Why this alert:</b> ${a.why}</div><div class="ah-whyline" style="margin-top:6px;"><b>Suggested investigation:</b></div><ul>${a.sug.map(x=>`<li>${ahE(x)}</li>`).join('')}</ul></div>`;
+  });
+  if(skipped.length){
+    h+=`<details style="margin-top:10px;"><summary class="note" style="cursor:pointer;">${skipped.length} series skipped (insufficient data)</summary>${skipped.map(s=>`<div class="highlight-row"><span>${ahE(s.name)}</span><span class="note">${ahE(s.why)}</span></div>`).join('')}</details>`;
+  }
+  el.innerHTML=h;
+}
+function ahApplyF5(){
+  const g=id=>parseFloat(document.getElementById('ah-an-'+id).value), e=document.getElementById('ah-an-err');
+  const v={recentDays:g('recent'),minBaseline:g('base'),info:g('info'),warn:g('warn'),crit:g('crit'),z:g('z')};
+  if(Object.values(v).some(x=>!isFinite(x)||x<=0)){ e.innerHTML=ahNote('err','All settings must be numbers greater than 0.'); return; }
+  if(!Number.isInteger(v.recentDays)||v.recentDays<1||!Number.isInteger(v.minBaseline)||v.minBaseline<3){ e.innerHTML=ahNote('err','Recent window must be a whole number of days (≥ 1) and minimum baseline a whole number ≥ 3.'); return; }
+  if(!(v.info<v.warn && v.warn<v.crit)){ e.innerHTML=ahNote('err','Thresholds must increase: Informational &lt; Warning &lt; Critical.'); return; }
+  AH.cfg.an=v; ahRenderF5(); ahRenderF2();
+}
+function ahResetF5(){ AH.cfg.an={recentDays:7,minBaseline:7,info:10,warn:20,crit:40,z:2}; ahRenderF5(); ahRenderF2(); }
+
+/* =========================== ORCHESTRATION =========================== */
+function ahRenderAll(){
+  if(!AH.ctx) return;
+  [ahRenderF1,ahRenderF2,ahRenderF3,ahRenderF4,ahRenderF5].forEach(fn=>{ try{ fn(); }catch(err){ console.error('[Advanced analytics]',fn.name,err); } });
+}
+function ahMount(){
+  const out=document.getElementById('raw-sheets-output'); if(!out||!AH.ctx) return;
+  const cards=[
+    ['1','Campaign Health Score'],['2','Budget Optimization Recommendations'],['3','Period-over-Period Comparison'],
+    ['4','Conversion Funnel Analysis'],['5','Anomaly Detection']
+  ];
+  let h='<div class="ah-root" id="ah-root"><div class="ah-heading">Advanced analytics</div>';
+  cards.forEach(([n,t])=>{ h+=`<details class="ah-card" id="ah-card-${n}"><summary><span>${n}. ${t}</span><span class="ah-chev"></span></summary><div class="ah-body" id="ah-body-${n}"></div></details>`; });
+  h+='</div>';
+  out.insertAdjacentHTML('beforeend',h);
+  ahRenderAll();
+}
+// Capture the dataset processRawData() already parsed (no second parse).
+(function(){
+  const origDemo=window.rawBuildDemographicSheet;
+  window.rawBuildDemographicSheet=function(rows,c){ AH.ctx={rows:rows,c:c}; return origDemo.apply(this,arguments); };
+  const origProcess=window.processRawData;
+  window.processRawData=function(){
+    AH.ctx=null; AH.cache=null;
+    const ret=origProcess.apply(this,arguments);
+    if(AH.ctx){
+      AH.st={};
+      try{ ahMount(); }catch(err){ console.error('[Advanced analytics] could not render',err); }
+    }
+    return ret;
+  };
+})();
+</script>
+<!-- ================= BACK NAVIGATION (additive; no existing code, markup or style was modified) ================= -->
+<style>
+  #app-back-btn{position:fixed;top:5px;left:14px;z-index:1000;padding:3px 12px;font-size:12.5px;background:var(--panel);}
+  #app-back-btn:hover:not(:disabled){background:var(--accent-soft);}
+</style>
+<button class="btn ghost" id="app-back-btn" type="button" title="Go back to the previous step" disabled>&larr; Back</button>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const stack=[];                       // history of UI states; last item = what is on screen now
+  const planIds=new WeakMap(); let planSeq=0;
+  function planId(p){ if(!p) return 0; if(!planIds.has(p)) planIds.set(p,++planSeq); return planIds.get(p); }
+
+  function snap(){
+    const act=document.querySelector('.screen.active');
+    return {
+      screen: act?act.id:'screen-dashboard',
+      wsPaste:$('ws-paste').value, wsHeader:$('ws-header').checked, wsTitle:$('ws-title').textContent,
+      wsCrumb:$('ws-title-crumb').textContent, wsCols:$('ws-columns').textContent,
+      wsPanel:$('ws-table-panel').style.display, wsTable:$('ws-table-container').innerHTML,
+      cat:currentCategory, rows:currentRows.map(r=>r.slice()),
+      insPaste:$('ins-paste').value, insHeader:$('ins-header').checked, insOut:$('ins-output').innerHTML,
+      rawPaste:$('raw-paste').value, rawStatus:$('raw-status').textContent, rawOut:$('raw-sheets-output').innerHTML,
+      plan:rawGeneratedSheets, scroll:window.scrollY
+    };
+  }
+  function sig(s){ const o=Object.assign({},s); o.plan=planId(s.plan); delete o.scroll; return JSON.stringify(o); }
+  function updateBtn(){ $('app-back-btn').disabled = stack.length<2; }
+  function record(){
+    const s=snap(); s._sig=sig(s);
+    if(stack.length && stack[stack.length-1]._sig===s._sig) return;   // nothing changed
+    stack.push(s); updateBtn();
+  }
+  function restore(s){
+    $('ws-paste').value=s.wsPaste; $('ws-header').checked=s.wsHeader; $('ws-title').textContent=s.wsTitle;
+    $('ws-title-crumb').textContent=s.wsCrumb; $('ws-columns').textContent=s.wsCols;
+    $('ws-table-panel').style.display=s.wsPanel; $('ws-table-container').innerHTML=s.wsTable;
+    currentCategory=s.cat; currentRows=s.rows.map(r=>r.slice());
+    $('ins-paste').value=s.insPaste; $('ins-header').checked=s.insHeader; $('ins-output').innerHTML=s.insOut;
+    $('raw-paste').value=s.rawPaste; $('raw-status').textContent=s.rawStatus; $('raw-sheets-output').innerHTML=s.rawOut;
+    rawGeneratedSheets=s.plan;
+    if(s.screen==='screen-category'){ origCategoryPicker(); }          // rebuilds the cards (their click handlers are not in the HTML)
+    else{ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active')); $(s.screen).classList.add('active'); }
+    window.scrollTo(0,s.scroll||0);
+  }
+  function goBack(){
+    if(stack.length<2) return;
+    stack.pop(); restore(stack[stack.length-1]); updateBtn();
+  }
+
+  const origCategoryPicker=window.goCategoryPicker;   // unwrapped copy, used only for restoring
+  // Record a history step after every existing action that changes what the person sees.
+  ['goDashboard','goCategoryPicker','goInsights','openWorkspace','loadPastedData','clearWorkspace',
+   'runInsights','clearInsights','goRawImport','clearRawImport','processRawData','rawOpenInWorkspace','rawOpenInInsights']
+  .forEach(name=>{
+    const orig=window[name];
+    window[name]=function(){ const r=orig.apply(this,arguments); record(); return r; };
+  });
+
+  // Typed / pasted input counts as its own step ("enter raw data"), recorded when the box loses focus.
+  ['ws-paste','raw-paste','ins-paste','ws-header','ins-header'].forEach(id=>$(id).addEventListener('change',record));
+  // File upload fills the raw box asynchronously, so wait for the text to appear.
+  $('raw-file').addEventListener('change',()=>{
+    let tries=0; const before=$('raw-paste').value;
+    const t=setInterval(()=>{ tries++; if($('raw-paste').value!==before || tries>40){ clearInterval(t); record(); } },100);
+  });
+
+  $('app-back-btn').addEventListener('click',goBack);
+  record();                                           // initial state: dashboard
+})();
+</script>
+<button class="btn ghost" id="theme-toggle-btn" type="button" title="Switch between Light and Dark mode" aria-label="Toggle light or dark mode">&#9790; Dark</button>
+<script>
+(function(){
+  var root=document.documentElement, b=document.getElementById('theme-toggle-btn');
+  function apply(t){
+    if(t==='dark'){ root.setAttribute('data-theme','dark'); b.innerHTML='&#9728; Light'; }
+    else{ root.removeAttribute('data-theme'); b.innerHTML='&#9790; Dark'; }
+  }
+  var saved=null; try{ saved=localStorage.getItem('audit-formatter-theme'); }catch(e){}
+  apply(saved==='dark'?'dark':'light');
+  b.addEventListener('click',function(){
+    var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    apply(next);
+    try{ localStorage.setItem('audit-formatter-theme',next); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

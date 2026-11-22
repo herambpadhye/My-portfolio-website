@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Audit Formatter · Meta Ads Analytics Toolkit</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -177,6 +177,164 @@ select.ah-input{width:auto;min-width:160px;max-width:100%}
 }
 @media (max-width:640px){.panel{padding:16px}.page-h h2{font-size:21px}.ah-fstage{flex-direction:column;align-items:stretch;gap:4px}.ah-body{padding:16px}details.ah-card>summary{padding:14px 16px}.drop{padding:34px 14px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+
+/* ===== ANIMATION LAYER (visual only; no functional changes) ===== */
+body,.side,.topbar,.panel,.card,.kpi,.stat,.nav,button.btn,.tab,textarea,.ah-input,.select,table.data th{transition-property:background-color,border-color,color,box-shadow,transform,opacity;transition-duration:.25s;transition-timing-function:ease}
+/* hero */
+.hero h1{background:linear-gradient(100deg,var(--ink) 30%,var(--accent) 50%,var(--blue) 70%,var(--ink));background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:heroIn .7s cubic-bezier(.2,.7,.2,1) both,sheen 7s ease-in-out 1s infinite}
+.hero p{animation:heroIn .7s .12s cubic-bezier(.2,.7,.2,1) both}
+.start>.panel,.start>.help,.start>.privacy{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+.start>.panel:nth-of-type(1){animation-delay:.15s}.start>.help{animation-delay:.28s}.start>.privacy{animation-delay:.4s}
+@keyframes heroIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes sheen{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* sidebar */
+.logo{animation:logoPulse 3.2s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,199,160,.35)}50%{box-shadow:0 0 0 8px rgba(34,199,160,0)}}
+.nav{animation:slideIn .4s cubic-bezier(.2,.7,.2,1) both}
+nav .nav:nth-of-type(1){animation-delay:.05s}nav .nav:nth-of-type(2){animation-delay:.1s}nav .nav:nth-of-type(3){animation-delay:.15s}nav .nav:nth-of-type(4){animation-delay:.2s}nav .nav:nth-of-type(5){animation-delay:.25s}nav .nav:nth-of-type(6){animation-delay:.3s}
+.nav:hover:not(:disabled){transform:translateX(3px)}
+.nav .n{transition:transform .25s,background .25s}.nav:hover:not(:disabled) .n{transform:scale(1.12)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.datachip{animation:rise .45s both}.datachip i{animation:dot 2s ease-in-out infinite}
+@keyframes dot{0%,100%{box-shadow:0 0 0 3px rgba(34,199,160,.2)}50%{box-shadow:0 0 0 7px rgba(34,199,160,0)}}
+/* buttons */
+button.btn{position:relative;overflow:hidden}
+button.btn.accent:not(:disabled)::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);transform:translateX(-120%);pointer-events:none}
+button.btn.accent:hover:not(:disabled)::after{transform:translateX(120%);transition:transform .7s ease}
+button.btn:active:not(:disabled){transform:scale(.96)}
+#menu-btn{transition:transform .25s}#menu-btn:active{transform:rotate(90deg) scale(.9)}
+/* panels, cards, tabs */
+.screen.active .panel,.screen.active .kpis,.screen.active .page-h,.screen.active .grid,.screen.active .tblpanel{animation:rise .45s cubic-bezier(.2,.7,.2,1) both}
+.screen.active .page-h{animation-delay:0s}.screen.active .panel:nth-of-type(1){animation-delay:.05s}.screen.active .panel:nth-of-type(2){animation-delay:.1s}.screen.active .panel:nth-of-type(3){animation-delay:.15s}
+.card{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}.card:nth-child(2){animation-delay:.06s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.18s}.card:nth-child(5){animation-delay:.24s}.card:nth-child(6){animation-delay:.3s}.card:nth-child(7){animation-delay:.36s}
+.card .num{transition:letter-spacing .3s}.card:hover .num{letter-spacing:.12em}
+.tab{position:relative}.tab[aria-selected="true"]{animation:pop .3s ease}
+@keyframes pop{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+.wbpane:not([hidden]){animation:enter .35s cubic-bezier(.2,.7,.2,1) both}
+.tablewrap{transition:box-shadow .25s}.tablewrap:hover{box-shadow:0 6px 22px rgba(0,0,0,.18)}
+table.data tbody tr{transition:background-color .15s,box-shadow .15s}
+table.data tbody tr:hover td{filter:brightness(1.07)}
+table.data td[contenteditable]:focus{animation:cellFocus .25s ease}
+@keyframes cellFocus{from{box-shadow:inset 0 0 0 4px var(--accent-soft)}to{box-shadow:inset 0 0 0 0 transparent}}
+/* drop zone */
+.drop svg{animation:floatY 3s ease-in-out infinite}.drop.drag svg{animation-duration:.9s}
+.drop.drag{transform:scale(1.015)}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.filechip,.status:not([hidden]),.ah-msg,.gate{animation:rise .4s both}
+.status.err:not([hidden]){animation:shake .45s both}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.resume:not([hidden]){animation:rise .5s both}
+/* loader */
+.loader:not([hidden]){animation:fade .2s both}.loader>div{animation:popIn .3s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:none}}
+/* insights / analytics */
+.stat{transition:transform .2s,border-color .2s}.stat:hover{transform:translateY(-2px);border-color:var(--accent)}
+.insight-grid .stat:nth-child(2){animation-delay:.05s}.insight-grid .stat:nth-child(3){animation-delay:.1s}.insight-grid .stat:nth-child(4){animation-delay:.15s}.insight-grid .stat:nth-child(5){animation-delay:.2s}
+.ai-panel,.deep-panel{animation:rise .5s both}.ai-badge{animation:badgeGlow 2.8s ease-in-out infinite}
+@keyframes badgeGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,199,160,.3)}50%{box-shadow:0 0 0 5px rgba(34,199,160,0)}}
+.highlight-row{transition:background-color .2s,padding .2s}.highlight-row:hover{background:var(--accent-soft);padding-left:8px;padding-right:8px;border-radius:6px}
+details.ah-card{transition:border-color .2s,box-shadow .25s}details.ah-card:hover{box-shadow:var(--shadow)}
+details.ah-card>summary .ah-chev{transition:color .2s}details.ah-card>summary:hover .ah-chev{color:var(--accent)}
+.ah-camp{transition:border-color .2s}.ah-camp:hover{border-color:var(--accent)}.ah-camp[open]>.ah-camp-body{animation:enter .25s both}
+.ah-alert{animation:alertIn .45s cubic-bezier(.2,.7,.2,1) both}.ah-alert.critical{animation:alertIn .45s both,critPulse 2.6s ease-in-out .5s infinite}
+@keyframes alertIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes critPulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.28)}50%{box-shadow:0 0 0 6px rgba(248,113,113,0)}}
+.ah-fstage:nth-child(2) .ah-fbar{animation-delay:.08s}.ah-fstage:nth-child(3) .ah-fbar{animation-delay:.16s}.ah-fstage:nth-child(4) .ah-fbar{animation-delay:.24s}.ah-fstage:nth-child(5) .ah-fbar{animation-delay:.32s}
+.ah-fbar{transition:filter .2s}.ah-fbar:hover{filter:brightness(1.1)}
+.ah-badge2,.tag2{transition:transform .2s}.ah-badge2:hover,.tag2:hover{transform:scale(1.06)}
+.kpi:nth-child(7){animation-delay:.42s}
+/* back/theme feedback */
+.crumb{animation:fade .35s both}
+@media (prefers-reduced-motion:reduce){.hero h1{-webkit-text-fill-color:var(--ink);background:none}.logo,.datachip i,.drop svg,.ai-badge,.ah-alert.critical{animation:none!important}}
+
+/* ===== RESPONSIVE LAYER (phones, foldables, tablets, laptops) ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-x:hidden}
+img,svg,video{max-width:100%}
+.app{min-height:100vh;min-height:100dvh}
+.side{height:100vh;height:100dvh}
+.grid{grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr))}
+.help{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr))}
+.insight-grid{grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr))}
+.ah-grid{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr))}
+.page-h>div{min-width:0}
+.panel,.card,.ai-panel,.deep-panel{min-width:0}
+.ai-line,.deep-line,.page-h p,.lede{overflow-wrap:anywhere}
+.tablewrap,.deep-table-wrap{-webkit-overflow-scrolling:touch;max-width:100%}
+.topbar{padding-top:max(10px,env(safe-area-inset-top));padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+.scrim{display:none}
+@media (max-width:1000px){
+ .app{grid-template-columns:220px minmax(0,1fr)}
+ .topbar{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+ .page-h h2{font-size:22px}
+ .ah-cfg-table td .ah-input{max-width:120px}
+}
+/* phones & Z Fold cover screen: sections panel becomes a slide-over drawer (main stays visible behind a light veil) */
+@media (max-width:700px){
+ .app,.app.side-closed{grid-template-columns:minmax(0,1fr)}
+ .side,.app.side-closed .side{position:fixed;left:0;top:0;bottom:0;width:min(280px,86vw);z-index:70;padding:max(16px,env(safe-area-inset-top)) 12px 16px;border-right:1px solid var(--line);box-shadow:var(--shadow);transition:transform .28s cubic-bezier(.2,.7,.2,1),visibility 0s linear 0s;visibility:visible;overflow-y:auto}
+ .app.side-closed .side{transform:translateX(-104%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.7,.2,1),visibility 0s linear .28s;box-shadow:none}
+ .app:not(.side-closed) .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:65;animation:fade .2s both}
+ .main{padding:16px 14px 64px}
+ .topbar{gap:8px}
+ .crumb{font-size:13px}
+ .hero{margin:6px auto 20px}.hero p{font-size:15px}
+ .page-h{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:16px}
+ .page-h .row{width:100%}.page-h .row .btn{flex:1 1 auto}
+ .panel{padding:14px;margin-bottom:14px}
+ .tblhead{flex-direction:column}.tblbtns{width:100%}.tblbtns .btn{flex:1 1 auto}
+ .tabs{width:100%;flex-wrap:nowrap;scrollbar-width:thin}
+ .tab{flex:0 0 auto}
+ .row{gap:10px}.row>.btn{flex:1 1 auto}
+ .drop{padding:30px 12px}
+ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .kpi b{font-size:17px;overflow-wrap:anywhere}
+ .insight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .stat .v{font-size:17px;overflow-wrap:anywhere}
+ .tablewrap{max-height:60vh;max-height:60dvh}
+ table.data{font-size:12px}table.data td{padding:7px 9px}table.data th{padding:8px 9px}
+ .ah-camp>summary{padding:10px 12px}
+ .ah-select,.select,select.ah-input{min-width:0;width:100%}
+ .ah-field{width:100%}
+ .ah-pcts{width:100%}.ah-pcts .btn{flex:1}
+ .ah-fbar{font-size:11.5px;padding:0 8px}
+ .highlight-row{flex-wrap:wrap;gap:4px}
+ .help ul{padding-left:16px}
+ .privacy{flex-direction:column;gap:6px}
+ .loader>div{padding:20px}
+}
+/* touch devices: comfortable targets, no iOS input zoom */
+@media (pointer:coarse){
+ button.btn,.tab,.nav{min-height:44px}
+ button.btn.sm{min-height:40px}
+ .ah-input,.select,select.ah-input,textarea,input[type="number"],input[type="date"]{font-size:16px}
+ .nav:hover:not(:disabled){transform:none}
+ .card:hover,.kpi:hover,.stat:hover{transform:none}
+}
+/* very narrow (Z Fold cover ~280px, small phones) */
+@media (max-width:380px){
+ .main{padding:12px 10px 56px}
+ .hero h1{font-size:30px}
+ .kpis,.insight-grid{grid-template-columns:minmax(0,1fr)}
+ .panel{padding:12px}
+ .page-h h2{font-size:19px}
+ .brand small{display:none}
+ .btn{padding-left:12px;padding-right:12px}
+}
+/* tablets & unfolded foldables */
+@media (min-width:701px) and (max-width:1000px){
+ .main{padding:22px 20px 70px}
+ .side{width:220px}
+}
+/* large screens: keep content readable */
+@media (min-width:1600px){.main{max-width:1400px}}
+/* landscape phones: shorter chrome */
+@media (max-height:480px) and (orientation:landscape){
+ .hero{margin:0 auto 14px}.hero h1{font-size:28px}.topbar{padding-top:6px;padding-bottom:6px}
+}
+@media print{.side,.topbar,.scrim{display:none!important}.app{display:block}}
 </style>
 </head>
 <body>
@@ -2324,7 +2482,7 @@ function appOpenInsights(manual){
   showScreen('screen-insights');
   appOnScreen('screen-insights');
 }
-function appCloseNav(){ /* sidebar is docked; navigating no longer closes it */ }
+function appCloseNav(){ if(window.innerWidth<=700){ $('app').classList.add('side-closed'); if(window.appSyncMenu) appSyncMenu(); } }
 
 /* ---------- status / welcome ---------- */
 function appStatus(msg,kind){ const e=$('raw-status'); e.textContent=msg||''; e.className='status'+(kind?' '+kind:''); e.hidden=!msg; }
@@ -2524,8 +2682,13 @@ function rawOpenInInsights(si,ti){ APP.insManual=false; rawRunInsights(si,ti); s
   $('app-back-btn').addEventListener('click',appBack);
   const appEl=$('app'), mb=$('menu-btn');
   function syncMenu(){ const closed=appEl.classList.contains('side-closed'); mb.setAttribute('aria-expanded',String(!closed)); mb.setAttribute('aria-label',closed?'Open sections panel':'Close sections panel'); mb.textContent=closed?'☰':'✕'; }
-  if(window.innerWidth<=1000) appEl.classList.add('side-closed');
+  window.appSyncMenu=syncMenu;
+  if(window.innerWidth<=900) appEl.classList.add('side-closed');
   syncMenu();
+  let lastW=window.innerWidth;
+  window.addEventListener('resize',()=>{ const w=window.innerWidth; if(lastW>700 && w<=700){ appEl.classList.add('side-closed'); syncMenu(); } lastW=w; });
+  $('scrim').addEventListener('click',()=>{ appEl.classList.add('side-closed'); syncMenu(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && window.innerWidth<=700 && !appEl.classList.contains('side-closed')){ appEl.classList.add('side-closed'); syncMenu(); } });
   mb.addEventListener('click',()=>{ appEl.classList.toggle('side-closed'); syncMenu(); });
       try{ history.replaceState({i:0,s:'screen-welcome'},'','#welcome'); }catch(e){ APP.hist=false; }
   document.querySelectorAll('.needs-data').forEach(b=>b.disabled=true);

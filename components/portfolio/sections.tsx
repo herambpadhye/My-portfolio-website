@@ -20,7 +20,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react"
-import { projects, socialLinks, type PortfolioProject } from "@/lib/projects"
+import { contactEmail, projects, socialLinks, type PortfolioProject } from "@/lib/projects"
 import { Reveal } from "@/components/portfolio/reveal"
 import { ContactForm } from "@/components/portfolio/contact-form"
 
@@ -282,7 +282,7 @@ export function ContactSection() {
             <div className="contact-socials">
               <a href={socialLinks.github} target="_blank" rel="noreferrer"><span className="social-text-mark" aria-hidden="true">GH</span><span>GitHub<small>github.com/herambpadhye</small></span><ArrowUpRight aria-hidden="true" /></a>
               <a href={socialLinks.linkedin} target="_blank" rel="noreferrer"><span className="social-text-mark" aria-hidden="true">in</span><span>LinkedIn<small>linkedin.com/in/heramb-padhye</small></span><ArrowUpRight aria-hidden="true" /></a>
-              <div className="contact-email"><span className="email-icon">@</span><span>Email<small>Address to be added</small></span><span className="email-edit">EDIT IN CONFIG</span></div>
+              <a className="contact-email" href={`mailto:${contactEmail}`}><span className="email-icon" aria-hidden="true">@</span><span>Email<small>{contactEmail}</small></span><ArrowUpRight aria-hidden="true" /></a>
             </div>
           </Reveal>
         </div>

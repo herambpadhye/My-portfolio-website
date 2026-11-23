@@ -10,7 +10,7 @@ function hasConfiguredEmail() {
 
 export function ContactForm() {
   const [message, setMessage] = useState("")
-  const [emailReady, setEmailReady] = useState(false)
+  const [emailDraftUrl, setEmailDraftUrl] = useState("")
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -21,7 +21,7 @@ export function ContactForm() {
     const body = String(formData.get("message") ?? "")
 
     if (!hasConfiguredEmail()) {
-      setEmailReady(false)
+      setEmailDraftUrl("")
       setMessage("This form is not connected to an email service yet. Add a real email address in lib/projects.ts to prepare an email draft.")
       return
     }
@@ -29,10 +29,9 @@ export function ContactForm() {
     const mailto = new URL(`mailto:${contactEmail}`)
     mailto.searchParams.set("subject", subject || `Portfolio inquiry from ${name}`)
     mailto.searchParams.set("body", `Name: ${name}\nEmail: ${senderEmail}\n\n${body}`)
-    window.location.href = mailto.toString()
-    setEmailReady(true)
-    setMessage("Your email draft is ready in your mail app. Review it there to send.")
-    event.currentTarget.reset()
+    const draftUrl = mailto.toString()
+    setEmailDraftUrl(draftUrl)
+    setMessage("Your email draft is ready. Select Open email draft to open it in your mail app.")
   }
 
   return (
@@ -44,9 +43,12 @@ export function ContactForm() {
       </div>
       <label>Subject<input name="subject" type="text" placeholder="What&apos;s this about?" required /></label>
       <label>Message<textarea name="message" rows={4} placeholder="A few details about your idea..." required /></label>
-      <button className="button-primary form-submit" type="submit">Send message <Send aria-hidden="true" /></button>
-      <p className={`form-feedback${message ? " is-visible" : ""}`} role="status" aria-live="polite">{message}{emailReady && <ArrowUpRight aria-hidden="true" />}</p>
-      <p className="form-note">No message is sent by this site. When configured, this form opens a draft in your email app.</p>
+      <button className="button-primary form-submit" type="submit">Prepare email draft <Send aria-hidden="true" /></button>
+      <div className={`form-feedback${message ? " is-visible" : ""}`} role="status" aria-live="polite">
+        <span>{message}</span>
+        {emailDraftUrl && <a className="form-draft-link" href={emailDraftUrl} target="_blank" rel="noopener noreferrer">Open email draft <ArrowUpRight aria-hidden="true" /></a>}
+      </div>
+      <p className="form-note">This site does not send messages directly. Review and send the prefilled draft in your email app.</p>
     </form>
   )
 }

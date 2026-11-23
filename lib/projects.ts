@@ -82,6 +82,7 @@ export const projects: PortfolioProject[] = [
 
 // Add a preferred email address to enable mail links and email-draft submission.
 export const contactEmail = "herambpadhye@gmail.com"
+export const contactPhone = "+91 7066617127"
 
 export const socialLinks = {
   github: "https://github.com/herambpadhye",
